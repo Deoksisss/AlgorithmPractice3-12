@@ -1,0 +1,17 @@
+# Build output
+bin/
+obj/
+.vs/
+
+# IDE / user settings
+.idea/
+*.user
+*.suo
+
+# Runtime reports
+output/*.csv
+!output/.gitkeep
+
+# OS
+Thumbs.db
+.DS_Store
