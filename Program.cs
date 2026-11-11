@@ -13,6 +13,11 @@ public static class Program
 
         try
         {
+            if (args.Any(arg => arg.Equals("--linked-list-test", StringComparison.OrdinalIgnoreCase)))
+            {
+                return LinkedListSelfTestRunner.Run();
+            }
+
             if (args.Any(arg => arg.Equals("--self-test", StringComparison.OrdinalIgnoreCase)))
             {
                 var includeExtreme = args.Any(arg =>
