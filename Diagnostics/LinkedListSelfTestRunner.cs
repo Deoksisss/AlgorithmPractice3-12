@@ -1,4 +1,5 @@
 using StackQueueLab.Core.Structures;
+using StackQueueLab.Services;
 
 namespace StackQueueLab.Diagnostics;
 
@@ -24,6 +25,7 @@ public static class LinkedListSelfTestRunner
         failures += CheckInsertSorted();
         failures += CheckRemoveAll();
         failures += CheckInsertBefore();
+        failures += CheckHighlightedPositions();
 
         Console.WriteLine();
         Console.WriteLine(failures == 0
@@ -269,6 +271,50 @@ public static class LinkedListSelfTestRunner
         return failures;
     }
 
+    private static int CheckHighlightedPositions()
+    {
+        Console.WriteLine("Выделение реально изменивших позицию элементов");
+
+        var failures = 0;
+
+        var reverseFour = LinkedListTaskService.Execute(1, new[] { 1, 2, 3, 4 });
+        failures += CheckResultList("  1. reverse", reverseFour.After, new[] { 4, 3, 2, 1 });
+        failures += CheckChangedSet("  1. reverse changed", reverseFour.ChangedIndexes, new[] { 0, 1, 2, 3 });
+
+        var reverseFive = LinkedListTaskService.Execute(1, new[] { 1, 2, 3, 4, 5 });
+        failures += CheckChangedSet("  1. центр не выделен", reverseFive.ChangedIndexes, new[] { 0, 1, 3, 4 });
+
+        var moveLast = LinkedListTaskService.Execute(2, new[] { 1, 2, 3 }, variant: 1);
+        failures += CheckResultList("  2. последний в начало", moveLast.After, new[] { 3, 1, 2 });
+        failures += CheckChangedSet("  2. выделен только перемещённый", moveLast.ChangedIndexes, new[] { 0 });
+
+        var moveFirst = LinkedListTaskService.Execute(2, new[] { 1, 2, 3 });
+        failures += CheckResultList("  2. первый в конец", moveFirst.After, new[] { 2, 3, 1 });
+        failures += CheckChangedSet("  2. сдвиги не выделены", moveFirst.ChangedIndexes, new[] { 2 });
+
+        var insertSelf = LinkedListTaskService.Execute(5, new[] { 1, 2, 3 }, firstParameter: 2);
+        failures += CheckResultList(
+            "  5. копия после второго",
+            insertSelf.After,
+            new[] { 1, 2, 1, 2, 3, 3 });
+        failures += CheckChangedSet("  5. выделена вставленная копия", insertSelf.ChangedIndexes, new[] { 2, 3, 4 });
+
+        var insertSorted = LinkedListTaskService.Execute(6, new[] { 1, 3, 5 }, firstParameter: 4);
+        failures += CheckResultList("  6. вставка по порядку", insertSorted.After, new[] { 1, 3, 4, 5 });
+        failures += CheckChangedSet("  6. выделен только новый E", insertSorted.ChangedIndexes, new[] { 2 });
+
+        var removeAll = LinkedListTaskService.Execute(7, new[] { 1, 2, 2, 3 }, firstParameter: 2);
+        failures += CheckResultList("  7. после удаления", removeAll.After, new[] { 1, 3 });
+        failures += CheckChangedSet("  7. сдвинутые не выделены", removeAll.ChangedIndexes, Array.Empty<int>());
+
+        var insertBefore = LinkedListTaskService.Execute(8, new[] { 1, 2, 2, 3 }, firstParameter: 9, secondParameter: 2);
+        failures += CheckResultList("  8. перед первым E", insertBefore.After, new[] { 1, 9, 2, 2, 3 });
+        failures += CheckChangedSet("  8. сдвинутый E не выделен", insertBefore.ChangedIndexes, new[] { 1 });
+
+        Console.WriteLine();
+        return failures;
+    }
+
     private static CustomLinkedList From(params int[] values)
     {
         var list = new CustomLinkedList();
@@ -309,6 +355,39 @@ public static class LinkedListSelfTestRunner
         }
 
         Console.WriteLine($"ERR {name}: ожидалось {expected}, получилось {actual}");
+        return 1;
+    }
+
+    private static int CheckResultList(string name, IReadOnlyList<int> actual, IReadOnlyList<int> expected)
+    {
+        if (actual.Count == expected.Count && actual.SequenceEqual(expected))
+        {
+            Console.WriteLine($"OK  {name}");
+            return 0;
+        }
+
+        Console.WriteLine(
+            $"ERR {name}: ожидалось [{Join(expected)}], получилось [{Join(actual)}]");
+        return 1;
+    }
+
+    private static int CheckChangedSet(
+        string name,
+        IReadOnlySet<int> actual,
+        IReadOnlyList<int> expected)
+    {
+        var sortedExpected = expected.OrderBy(value => value).ToArray();
+        var sortedActual = actual.OrderBy(value => value).ToArray();
+
+        if (sortedExpected.SequenceEqual(sortedActual))
+        {
+            Console.WriteLine($"OK  {name}: [{Join(sortedActual)}]");
+            return 0;
+        }
+
+        Console.WriteLine(
+            $"ERR {name}: ожидалось [{Join(sortedExpected)}], " +
+            $"получилось [{Join(sortedActual)}]");
         return 1;
     }
 
