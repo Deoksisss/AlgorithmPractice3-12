@@ -13,6 +13,7 @@
         <Transitions>
           <DoubleTransition Property="Canvas.Left" Duration="0:0:0.55" />
           <DoubleTransition Property="Canvas.Top" Duration="0:0:0.45" />
+          <DoubleTransition Property="Opacity" Duration="0:0:0.55" />
           <BrushTransition Property="Background" Duration="0:0:0.35" />
           <BrushTransition Property="BorderBrush" Duration="0:0:0.35" />
         </Transitions>
@@ -111,20 +112,33 @@
                    FontWeight="SemiBold"
                    Foreground="#DDE9F8"
                    Text="09:00" />
-        <Canvas x:Name="BankCanvas" Grid.Row="1">
-          <Ellipse Classes="teller idle"
-                   x:Name="TellerEllipse"
-                   Canvas.Left="70"
-                   Canvas.Top="40" />
-          <TextBlock Text="Кассир"
-                     Canvas.Left="55"
-                     Canvas.Top="110"
-                     Foreground="#AABBD2" />
-          <TextBlock Text="Очередь FIFO"
-                     Canvas.Left="70"
-                     Canvas.Top="220"
-                     Foreground="#AABBD2" />
-        </Canvas>
+        <ScrollViewer Grid.Row="1"
+                      x:Name="BankScroller"
+                      ClipToBounds="True"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled">
+          <Canvas x:Name="BankCanvas"
+                  Width="980"
+                  Height="470"
+                  ClipToBounds="True">
+            <Ellipse Classes="teller idle"
+                     x:Name="TellerEllipse"
+                     Canvas.Left="24"
+                     Canvas.Top="40" />
+            <TextBlock Text="Кассир"
+                       Canvas.Left="16"
+                       Canvas.Top="112"
+                       Foreground="#AABBD2" />
+            <TextBlock Text="Очередь FIFO"
+                       Canvas.Left="250"
+                       Canvas.Top="210"
+                       Foreground="#AABBD2" />
+            <TextBlock Text="Обслужены"
+                       Canvas.Left="16"
+                       Canvas.Top="330"
+                       Foreground="#AABBD2" />
+          </Canvas>
+        </ScrollViewer>
       </Grid>
     </Border>
 

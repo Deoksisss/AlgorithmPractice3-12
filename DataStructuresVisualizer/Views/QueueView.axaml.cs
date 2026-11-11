@@ -10,10 +10,14 @@ namespace DataStructuresVisualizer.Views;
 public partial class QueueView : UserControl
 {
     private const int WorkdayMinutes = 480;
+    private const double QueueStartX = 260;
+    private const double QueueY = 250;
+    private const double SlotWidth = 92;
 
     private readonly List<BankCustomer> plan = [];
     private readonly List<BankCustomer> waiting = [];
     private readonly List<Border> customerVisuals = [];
+    private readonly List<DispatcherTimer> removalTimers = [];
 
     private DispatcherTimer? timer;
     private int pointer;
@@ -28,7 +32,12 @@ public partial class QueueView : UserControl
     public QueueView()
     {
         InitializeComponent();
-        Loaded += (_, _) => GenerateClients();
+        Loaded += (_, _) =>
+        {
+            UpdateCanvasLayout();
+            GenerateClients();
+        };
+        BankScrollerControl.SizeChanged += (_, _) => UpdateCanvasLayout();
     }
 
     private void InitializeComponent()
@@ -38,10 +47,17 @@ public partial class QueueView : UserControl
 
     private TextBox ClientTextBox => Require<TextBox>("ClientInput");
     private Canvas QueueCanvas => Require<Canvas>("BankCanvas");
+    private ScrollViewer BankScrollerControl => Require<ScrollViewer>("BankScroller");
     private Avalonia.Controls.Shapes.Ellipse TellerShape => Require<Avalonia.Controls.Shapes.Ellipse>("TellerEllipse");
     private TextBlock StatusLabel => Require<TextBlock>("BankStatus");
     private TextBlock ClockLabel => Require<TextBlock>("ClockText");
     private Slider SpeedControl => Require<Slider>("SpeedSlider");
+    private TextBlock TotalLabel => Require<TextBlock>("TotalText");
+    private TextBlock ServedLabel => Require<TextBlock>("ServedText");
+    private TextBlock WaitingLabel => Require<TextBlock>("WaitingText");
+    private TextBlock AverageWaitLabel => Require<TextBlock>("AverageWaitText");
+    private TextBlock UtilizationLabel => Require<TextBlock>("UtilizationText");
+    private TextBlock IdleLabel => Require<TextBlock>("IdleText");
 
     private void GenerateClients_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
@@ -86,13 +102,6 @@ public partial class QueueView : UserControl
         StatusLabel.Text = "Симуляция остановлена.";
     }
 
-    private TextBlock TotalLabel => Require<TextBlock>("TotalText");
-    private TextBlock ServedLabel => Require<TextBlock>("ServedText");
-    private TextBlock WaitingLabel => Require<TextBlock>("WaitingText");
-    private TextBlock AverageWaitLabel => Require<TextBlock>("AverageWaitText");
-    private TextBlock UtilizationLabel => Require<TextBlock>("UtilizationText");
-    private TextBlock IdleLabel => Require<TextBlock>("IdleText");
-
     private void GenerateClients()
     {
         StopSimulation();
@@ -103,6 +112,7 @@ public partial class QueueView : UserControl
         plan.AddRange(BankService.GenerateRandom(Random.Shared, WorkdayMinutes));
         ClientTextBox.Text = BankService.ToInput(plan);
         TotalLabel.Text = plan.Count.ToString();
+        UpdateCanvasLayout();
         StatusLabel.Text = $"Сгенерировано клиентов: {plan.Count}.";
     }
 
@@ -116,6 +126,7 @@ public partial class QueueView : UserControl
         timer.Interval = TimeSpan.FromMilliseconds(GetInterval());
         AdvanceOneMinute();
         UpdateStats();
+        UpdateCanvasLayout();
 
         if (minute >= WorkdayMinutes)
         {
@@ -159,11 +170,39 @@ public partial class QueueView : UserControl
 
     private void Enqueue(BankCustomer customer)
     {
-        waiting.Add(customer);
+        UpdateCanvasLayout();
         var visual = CreateCustomerVisual(customer);
         customer.Visual = visual;
+
+        waiting.Add(customer);
         customerVisuals.Add(visual);
+
         PositionWaiting();
+    }
+
+    private Border CreateCustomerVisual(BankCustomer customer)
+    {
+        var canvas = QueueCanvas;
+        var border = new Border
+        {
+            Width = 82,
+            Height = 48
+        };
+
+        border.Classes.Add("customer");
+        border.Child = new TextBlock
+        {
+            Text = $"{customer.Name}\n{customer.ServiceMinutes} мин",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 10
+        };
+
+        Canvas.SetLeft(border, Math.Max(0, canvas.Width - 92));
+        Canvas.SetTop(border, QueueY);
+        canvas.Children.Add(border);
+
+        return border;
     }
 
     private void StartNextService()
@@ -177,11 +216,11 @@ public partial class QueueView : UserControl
         totalWaitMinutes += customer.WaitedMinutes.Value;
         waitCount++;
 
-        if (customer.Visual is not null)
+        if (customer.Visual is Border visual)
         {
-            customer.Visual.Classes.Add("active");
-            Canvas.SetLeft(customer.Visual, 52);
-            Canvas.SetTop(customer.Visual, 48);
+            visual.Classes.Add("active");
+            Canvas.SetLeft(visual, 16);
+            Canvas.SetTop(visual, 54);
         }
 
         TellerShape.Classes.Remove("idle");
@@ -203,8 +242,10 @@ public partial class QueueView : UserControl
         {
             visual.Classes.Remove("active");
             visual.Classes.Add("served");
-            Canvas.SetLeft(visual, -220);
-            Canvas.SetTop(visual, 310);
+            Canvas.SetLeft(visual, 16);
+            Canvas.SetTop(visual, 345);
+
+            StartRemovalTimer(visual);
         }
 
         active = null;
@@ -217,40 +258,65 @@ public partial class QueueView : UserControl
         }
     }
 
-    private Border CreateCustomerVisual(BankCustomer customer)
+    private void StartRemovalTimer(Border visual)
     {
-        var border = new Border
+        var removalTimer = new DispatcherTimer
         {
-            Width = 82,
-            Height = 48
+            Interval = TimeSpan.FromMilliseconds(950)
         };
 
-        border.Classes.Add("customer");
-        border.Child = new TextBlock
+        removalTimer.Tick += (_, _) =>
         {
-            Text = $"{customer.Name}\n{customer.ServiceMinutes} мин",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            FontSize = 10
+            removalTimer.Stop();
+            visual.Opacity = 0;
+
+            var cleanupTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(650)
+            };
+
+            cleanupTimer.Tick += (_, _) =>
+            {
+                cleanupTimer.Stop();
+
+                if (QueueCanvas.Children.Contains(visual))
+                {
+                    QueueCanvas.Children.Remove(visual);
+                }
+
+                customerVisuals.Remove(visual);
+                removalTimers.Remove(removalTimer);
+            };
+
+            cleanupTimer.Start();
         };
 
-        Canvas.SetLeft(border, 970);
-        Canvas.SetTop(border, 250);
-        QueueCanvas.Children.Add(border);
-
-        return border;
+        removalTimers.Add(removalTimer);
+        removalTimer.Start();
     }
 
     private void PositionWaiting()
     {
+        UpdateCanvasLayout();
+
         for (var i = 0; i < waiting.Count; i++)
         {
             if (waiting[i].Visual is Border visual)
             {
-                Canvas.SetLeft(visual, 170 + i * 88);
-                Canvas.SetTop(visual, 250);
+                Canvas.SetLeft(visual, QueueStartX + i * SlotWidth);
+                Canvas.SetTop(visual, QueueY);
             }
         }
+    }
+
+    private void UpdateCanvasLayout()
+    {
+        var viewportWidth = Math.Max(760, BankScrollerControl.Bounds.Width - 24);
+        var viewportHeight = Math.Max(430, BankScrollerControl.Bounds.Height - 12);
+        var neededWidth = QueueStartX + (waiting.Count + 2) * SlotWidth + 220;
+
+        QueueCanvas.Width = Math.Max(viewportWidth, neededWidth);
+        QueueCanvas.Height = viewportHeight;
     }
 
     private void UpdateStats()
@@ -273,6 +339,13 @@ public partial class QueueView : UserControl
 
     private void ClearVisualization()
     {
+        foreach (var removalTimer in removalTimers)
+        {
+            removalTimer.Stop();
+        }
+
+        removalTimers.Clear();
+
         var canvas = QueueCanvas;
 
         foreach (var visual in customerVisuals)
@@ -285,6 +358,7 @@ public partial class QueueView : UserControl
         active = null;
         TellerShape.Classes.Remove("busy");
         TellerShape.Classes.Add("idle");
+        UpdateCanvasLayout();
     }
 
     private void ResetCounters()

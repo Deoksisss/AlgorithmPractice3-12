@@ -116,9 +116,17 @@
             Background="#0C1A2B"
             CornerRadius="16"
             Padding="10">
-      <Canvas x:Name="MazeCanvas"
-              Background="Transparent"
-              ClipToBounds="True" />
+      <ScrollViewer x:Name="MazeScroller"
+                    ClipToBounds="True"
+                    HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Auto"
+                    PointerPressed="MazeScroller_PointerPressed"
+                    PointerMoved="MazeScroller_PointerMoved"
+                    PointerReleased="MazeScroller_PointerReleased"
+                    PointerCaptureLost="MazeScroller_PointerCaptureLost">
+        <Canvas x:Name="MazeCanvas"
+                Background="Transparent" />
+      </ScrollViewer>
     </Border>
 
     <StackPanel Grid.Column="2" Margin="12,0,0,0" Spacing="10">

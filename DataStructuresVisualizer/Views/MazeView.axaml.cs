@@ -23,11 +23,14 @@ public partial class MazeView : UserControl
     private int frameIndex;
     private MazePoint? currentPoint;
     private HashSet<MazePoint> stackSnapshot = [];
+    private Avalonia.Point? dragStart;
+    private Avalonia.Vector dragOffset;
+    private bool isDraggingMaze;
 
     public MazeView()
     {
         InitializeComponent();
-        MazeSurface.SizeChanged += (_, _) => RenderGrid();
+        MazeViewport.SizeChanged += (_, _) => RenderGrid();
 
         Loaded += (_, _) =>
         {
@@ -42,6 +45,7 @@ public partial class MazeView : UserControl
     }
 
     private Canvas MazeSurface => Require<Canvas>("MazeCanvas");
+    private ScrollViewer MazeViewport => Require<ScrollViewer>("MazeScroller");
     private TextBox MazeTextBox => Require<TextBox>("MazeInput");
     private ListBox StackBox => Require<ListBox>("StackList");
     private TextBlock StatusLabel => Require<TextBlock>("StatusText");
@@ -181,22 +185,38 @@ public partial class MazeView : UserControl
     private void RenderGrid()
     {
         var canvas = MazeSurface;
+        var viewport = MazeViewport;
+
         canvas.Children.Clear();
         visuals.Clear();
 
         if (grid is null)
         {
+            canvas.Width = Math.Max(1, viewport.Bounds.Width - 20);
+            canvas.Height = Math.Max(1, viewport.Bounds.Height - 20);
             return;
         }
 
-        var canvasWidth = Math.Max(400, canvas.Bounds.Width);
-        var canvasHeight = Math.Max(300, canvas.Bounds.Height);
+        var viewportWidth = Math.Max(320, viewport.Bounds.Width - 20);
+        var viewportHeight = Math.Max(240, viewport.Bounds.Height - 20);
 
         var cellSize = Math.Min(
-            (canvasWidth - 10) / grid.Width,
-            (canvasHeight - 10) / grid.Height);
+            (viewportWidth - 24) / grid.Width,
+            (viewportHeight - 24) / grid.Height);
 
-        cellSize = Math.Clamp(cellSize, 12, 40);
+        cellSize = Math.Clamp(cellSize, 16, 42);
+
+        var contentWidth = 16 + grid.Width * (cellSize + CellGap);
+        var contentHeight = 16 + grid.Height * (cellSize + CellGap);
+
+        var displayWidth = Math.Max(viewportWidth, contentWidth);
+        var displayHeight = Math.Max(viewportHeight, contentHeight);
+
+        canvas.Width = displayWidth;
+        canvas.Height = displayHeight;
+
+        var startX = Math.Max(8, (displayWidth - contentWidth) / 2.0 + 8);
+        var startY = Math.Max(8, (displayHeight - contentHeight) / 2.0 + 8);
 
         for (var y = 0; y < grid.Height; y++)
         {
@@ -229,12 +249,56 @@ public partial class MazeView : UserControl
                         break;
                 }
 
-                Canvas.SetLeft(border, 6 + x * (cellSize + CellGap));
-                Canvas.SetTop(border, 6 + y * (cellSize + CellGap));
+                Canvas.SetLeft(border, startX + x * (cellSize + CellGap));
+                Canvas.SetTop(border, startY + y * (cellSize + CellGap));
                 canvas.Children.Add(border);
                 visuals[point] = border;
             }
         }
+    }
+
+    private void MazeScroller_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        var viewport = MazeViewport;
+        dragStart = e.GetPosition(viewport);
+        dragOffset = viewport.Offset;
+        isDraggingMaze = true;
+        e.Pointer.Capture(viewport);
+    }
+
+    private void MazeScroller_PointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
+    {
+        if (!isDraggingMaze || dragStart is null)
+        {
+            return;
+        }
+
+        var viewport = MazeViewport;
+        var position = e.GetPosition(viewport);
+        var dx = position.X - dragStart.Value.X;
+        var dy = position.Y - dragStart.Value.Y;
+
+        viewport.Offset = new Avalonia.Vector(
+            dragOffset.X - dx,
+            dragOffset.Y - dy);
+    }
+
+    private void MazeScroller_PointerReleased(object? sender, Avalonia.Input.PointerReleasedEventArgs e)
+    {
+        if (!isDraggingMaze)
+        {
+            return;
+        }
+
+        isDraggingMaze = false;
+        dragStart = null;
+        e.Pointer.Capture(null);
+    }
+
+    private void MazeScroller_PointerCaptureLost(object? sender, Avalonia.Input.PointerCaptureLostEventArgs e)
+    {
+        isDraggingMaze = false;
+        dragStart = null;
     }
 
     private void RenderStates()
