@@ -105,6 +105,12 @@ public static class LinkedListSelfTestRunner
         failures += CheckValue("  есть повторы", From(1, 2, 2, 3, 3, 3).CountDistinct(), 3);
         failures += CheckValue("  один элемент", From(42).CountDistinct(), 1);
 
+        var serviceResult = LinkedListTaskService.Execute(3, new[] { 1, 2, 2, 3 });
+        failures += CheckText(
+            "  корректная подпись результата в сервисе",
+            serviceResult.Note,
+            "Количество различных элементов: 3.");
+
         Console.WriteLine();
         return failures;
     }
@@ -343,6 +349,18 @@ public static class LinkedListSelfTestRunner
             $"ERR {name}: ожидалось [{Join(expected)}], " +
             $"получилось [{Join(actual)}], Count={list.Count}/{expected.Count}");
 
+        return 1;
+    }
+
+    private static int CheckText(string name, string? actual, string expected)
+    {
+        if (actual == expected)
+        {
+            Console.WriteLine($"OK  {name}");
+            return 0;
+        }
+
+        Console.WriteLine($"ERR {name}: ожидалось «{expected}», получилось «{actual}»");
         return 1;
     }
 

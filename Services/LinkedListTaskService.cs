@@ -135,7 +135,7 @@ public static class LinkedListTaskService
                     before,
                     before,
                     changed,
-                    $"Количество различных элементов: {list.CountDistinct}.");
+                    $"Количество различных элементов: {list.CountDistinct()}.");
 
             case 4:
                 list.RemoveNonUnique();
