@@ -1,0 +1,186 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DataStructuresVisualizer.Views.QueueView">
+  <UserControl.Styles>
+    <Style Selector="Border.customer">
+      <Setter Property="Width" Value="82" />
+      <Setter Property="Height" Value="48" />
+      <Setter Property="CornerRadius" Value="15" />
+      <Setter Property="Background" Value="#25536F" />
+      <Setter Property="BorderBrush" Value="#66C7E8" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Canvas.Left" Duration="0:0:0.55" />
+          <DoubleTransition Property="Canvas.Top" Duration="0:0:0.45" />
+          <BrushTransition Property="Background" Duration="0:0:0.35" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.35" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.active">
+      <Setter Property="Background" Value="#8A5CF6" />
+      <Setter Property="BorderBrush" Value="#D6B8FF" />
+    </Style>
+    <Style Selector="Border.served">
+      <Setter Property="Background" Value="#219150" />
+      <Setter Property="BorderBrush" Value="#9DF5C6" />
+    </Style>
+    <Style Selector="Ellipse.teller">
+      <Setter Property="Width" Value="64" />
+      <Setter Property="Height" Value="64" />
+      <Setter Property="Fill" Value="#284462" />
+      <Setter Property="Stroke" Value="#55769A" />
+      <Setter Property="StrokeThickness" Value="2" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Fill" Duration="0:0:0.35" />
+          <BrushTransition Property="Stroke" Duration="0:0:0.35" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Ellipse.teller.busy">
+      <Setter Property="Fill" Value="#8A5CF6" />
+      <Setter Property="Stroke" Value="#FFD369" />
+    </Style>
+    <Style Selector="Ellipse.teller.idle">
+      <Setter Property="Fill" Value="#273E57" />
+      <Setter Property="Stroke" Value="#F0718A" />
+    </Style>
+    <Style Selector="TextBlock.statTitle">
+      <Setter Property="Foreground" Value="{StaticResource Muted}" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="TextBlock.statValue">
+      <Setter Property="Foreground" Value="#DDE9F8" />
+      <Setter Property="FontSize" Value="19" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="320,*,310">
+    <StackPanel Margin="0,0,12,0" Spacing="10">
+      <TextBlock Text="FIFO: очередь клиентов"
+                 Foreground="{StaticResource Accent}"
+                 FontSize="14"
+                 FontWeight="SemiBold" />
+      <TextBlock TextWrapping="Wrap"
+                 Foreground="{StaticResource Muted}"
+                 FontSize="12"
+                 Text="Enqueue добавляет в хвост, Dequeue забирает первого." />
+
+      <Button x:Name="GenerateClientsButton"
+              Content="Случайные клиенты"
+              HorizontalAlignment="Stretch"
+              Click="GenerateClients_Click" />
+      <Button x:Name="StartShiftButton"
+              Content="Начать рабочий день"
+              HorizontalAlignment="Stretch"
+              Click="StartShift_Click" />
+      <Button x:Name="StopShiftButton"
+              Content="Остановить"
+              HorizontalAlignment="Stretch"
+              Click="StopShift_Click" />
+
+      <TextBlock TextWrapping="Wrap"
+                 Foreground="{StaticResource Muted}"
+                 FontSize="12"
+                 Text="Ручной формат: Имя, минута прихода, минуты обслуживания" />
+      <TextBox x:Name="ClientInput"
+               Height="220"
+               AcceptsReturn="True"
+               FontFamily="Consolas" />
+
+      <TextBlock Foreground="{StaticResource Muted}" Text="Скорость симуляции" />
+      <Slider x:Name="SpeedSlider"
+              Minimum="1"
+              Maximum="60"
+              Value="22" />
+      <Border Background="#15263D" CornerRadius="10" Padding="10">
+        <TextBlock x:Name="BankStatus"
+                   TextWrapping="Wrap"
+                   Text="Загрузите случайных или ручных клиентов." />
+      </Border>
+    </StackPanel>
+
+    <Border Background="#0C1A2B" CornerRadius="16" Padding="10">
+      <Grid RowDefinitions="Auto,*">
+        <TextBlock x:Name="ClockText"
+                   HorizontalAlignment="Center"
+                   FontSize="24"
+                   FontWeight="SemiBold"
+                   Foreground="#DDE9F8"
+                   Text="09:00" />
+        <Canvas x:Name="BankCanvas" Grid.Row="1">
+          <Ellipse Classes="teller idle"
+                   x:Name="TellerEllipse"
+                   Canvas.Left="70"
+                   Canvas.Top="40" />
+          <TextBlock Text="Кассир"
+                     Canvas.Left="55"
+                     Canvas.Top="110"
+                     Foreground="#AABBD2" />
+          <TextBlock Text="Очередь FIFO"
+                     Canvas.Left="70"
+                     Canvas.Top="220"
+                     Foreground="#AABBD2" />
+        </Canvas>
+      </Grid>
+    </Border>
+
+    <StackPanel Grid.Column="2" Margin="12,0,0,0" Spacing="10">
+      <Border Background="#15263D"
+              CornerRadius="12"
+              Padding="14">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Статистика смены"
+                     Foreground="{StaticResource Accent}"
+                     FontSize="14"
+                     FontWeight="SemiBold" />
+
+          <StackPanel Spacing="1">
+            <TextBlock Classes="statTitle" Text="Всего клиентов" />
+            <TextBlock Classes="statValue" x:Name="TotalText" Text="0" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="statTitle" Text="Обслужено" />
+            <TextBlock Classes="statValue" x:Name="ServedText" Text="0" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="statTitle" Text="Осталось в очереди" />
+            <TextBlock Classes="statValue" x:Name="WaitingText" Text="0" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="statTitle" Text="Среднее ожидание" />
+            <TextBlock Classes="statValue" x:Name="AverageWaitText" Text="0 мин" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="statTitle" Text="Загруженность" />
+            <TextBlock Classes="statValue" x:Name="UtilizationText" Text="0%" />
+          </StackPanel>
+          <StackPanel Spacing="1">
+            <TextBlock Classes="statTitle" Text="Простой" />
+            <TextBlock Classes="statValue" x:Name="IdleText" Text="0%" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Background="#15263D" CornerRadius="12" Padding="12">
+        <StackPanel Spacing="8">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#25536F" CornerRadius="5" />
+            <TextBlock Text="В очереди" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#8A5CF6" CornerRadius="5" />
+            <TextBlock Text="Обслуживается" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#219150" CornerRadius="5" />
+            <TextBlock Text="Обслужен" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Grid>
+</UserControl>

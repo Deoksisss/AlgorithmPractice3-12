@@ -1,0 +1,171 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:DataStructuresVisualizer.Views"
+             x:Class="DataStructuresVisualizer.Views.MazeView">
+  <UserControl.Styles>
+    <Style Selector="Border.cell">
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.25" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.25" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.wall">
+      <Setter Property="Background" Value="#071322" />
+      <Setter Property="BorderBrush" Value="#162941" />
+    </Style>
+    <Style Selector="Border.floor">
+      <Setter Property="Background" Value="#142339" />
+      <Setter Property="BorderBrush" Value="#1E3452" />
+    </Style>
+    <Style Selector="Border.visited">
+      <Setter Property="Background" Value="#154B63" />
+      <Setter Property="BorderBrush" Value="#2A7A99" />
+    </Style>
+    <Style Selector="Border.stackCell">
+      <Setter Property="Background" Value="#0E7490" />
+      <Setter Property="BorderBrush" Value="#67E8F9" />
+    </Style>
+    <Style Selector="Border.current">
+      <Setter Property="Background" Value="#FFD369" />
+      <Setter Property="BorderBrush" Value="#FFF3B0" />
+    </Style>
+    <Style Selector="Border.dead">
+      <Setter Property="Background" Value="#6E2A3F" />
+      <Setter Property="BorderBrush" Value="#F0718A" />
+    </Style>
+    <Style Selector="Border.pathCell">
+      <Setter Property="Background" Value="#2ED7B7" />
+      <Setter Property="BorderBrush" Value="#B8FFE9" />
+    </Style>
+    <Style Selector="Border.start">
+      <Setter Property="Background" Value="#2FB389" />
+      <Setter Property="BorderBrush" Value="#9BF0D2" />
+    </Style>
+    <Style Selector="Border.end">
+      <Setter Property="Background" Value="#E25698" />
+      <Setter Property="BorderBrush" Value="#FFC0E0" />
+    </Style>
+    <Style Selector="TextBlock.panelTitle">
+      <Setter Property="Foreground" Value="{StaticResource Accent}" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="320,*,280">
+    <StackPanel Margin="0,0,12,0" Spacing="10">
+      <TextBlock Classes="panelTitle" Text="DFS через стек" />
+      <TextBlock TextWrapping="Wrap"
+                 Foreground="{StaticResource Muted}"
+                 FontSize="12"
+                 Text="Стек хранит координаты и позволяет возвращаться из тупиков." />
+
+      <Button x:Name="GenerateButton"
+              Content="Сгенерировать лабиринт"
+              HorizontalAlignment="Stretch"
+              Click="GenerateButton_Click" />
+      <Button x:Name="ManualLoadButton"
+              Content="Загрузить вручную"
+              HorizontalAlignment="Stretch"
+              Click="ManualLoadButton_Click" />
+
+      <TextBlock TextWrapping="Wrap"
+                 Foreground="{StaticResource Muted}"
+                 FontSize="12"
+                 Text="Символы: # стена, . проход, S старт, E выход." />
+      <TextBox x:Name="MazeInput"
+               Height="170"
+               AcceptsReturn="True"
+               FontFamily="Consolas" />
+
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button x:Name="StartButton"
+                Content="Запустить DFS"
+                Classes="accent"
+                Click="StartButton_Click" />
+        <Button x:Name="StopButton"
+                Content="Стоп"
+                Click="StopButton_Click" />
+        <Button x:Name="ResetButton"
+                Content="Сброс"
+                Click="ResetButton_Click" />
+      </StackPanel>
+
+      <TextBlock TextWrapping="Wrap"
+                 Foreground="{StaticResource Muted}"
+                 FontSize="12"
+                 Text="Скорость анимации" />
+      <Slider x:Name="SpeedSlider"
+              Minimum="25"
+              Maximum="500"
+              Value="90" />
+      <Border Background="#15263D"
+              CornerRadius="10"
+              Padding="10">
+        <TextBlock x:Name="StatusText"
+                   TextWrapping="Wrap"
+                   Text="Готово к запуску" />
+      </Border>
+    </StackPanel>
+
+    <Border Background="#0C1A2B"
+            CornerRadius="16"
+            Padding="10">
+      <Canvas x:Name="MazeCanvas"
+              Background="Transparent"
+              ClipToBounds="True" />
+    </Border>
+
+    <StackPanel Grid.Column="2" Margin="12,0,0,0" Spacing="10">
+      <Border Background="#15263D"
+              CornerRadius="12"
+              Padding="10">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="panelTitle" Text="Стек координат" />
+          <TextBlock x:Name="StepText"
+                     Text="0 / 0"
+                     Foreground="{StaticResource Muted}" />
+          <ListBox x:Name="StackList"
+                   Height="310"
+                   Background="Transparent" />
+        </StackPanel>
+      </Border>
+
+      <Border Background="#15263D"
+              CornerRadius="12"
+              Padding="10">
+        <StackPanel Spacing="7">
+          <TextBlock Classes="panelTitle" Text="Легенда" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#142339" CornerRadius="4" />
+            <TextBlock Text="Проход" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#154B63" CornerRadius="4" />
+            <TextBlock Text="Посещено" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#0E7490" CornerRadius="4" />
+            <TextBlock Text="В стеке" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#FFD369" CornerRadius="4" />
+            <TextBlock Text="Текущая вершина" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#6E2A3F" CornerRadius="4" />
+            <TextBlock Text="Тупик" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="18" Height="18" Background="#2ED7B7" CornerRadius="4" />
+            <TextBlock Text="Итоговый путь" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Grid>
+</UserControl>

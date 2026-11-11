@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DataStructuresVisualizer.Views.ExpressionTreeView">
+  <UserControl.Styles>
+    <Style Selector="Border.exprNode">
+      <Setter Property="Width" Value="60" />
+      <Setter Property="Height" Value="44" />
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Background" Value="#284462" />
+      <Setter Property="BorderBrush" Value="#537A9D" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.25" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.25" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.exprNode.operator">
+      <Setter Property="Background" Value="#6D4AC4" />
+      <Setter Property="BorderBrush" Value="#D2B4FF" />
+    </Style>
+    <Style Selector="Border.current">
+      <Setter Property="Background" Value="#FFD369" />
+      <Setter Property="BorderBrush" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="Border.done">
+      <Setter Property="Background" Value="#1E8C66" />
+      <Setter Property="BorderBrush" Value="#A5F2D3" />
+    </Style>
+    <Style Selector="Line.edge">
+      <Setter Property="Stroke" Value="#406083" />
+      <Setter Property="StrokeThickness" Value="2" />
+    </Style>
+    <Style Selector="TextBlock.smallLabel">
+      <Setter Property="Foreground" Value="{StaticResource Muted}" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="330,*">
+    <StackPanel Margin="0,0,12,0" Spacing="10">
+      <TextBlock Text="Дерево арифметического выражения"
+                 Foreground="{StaticResource Accent}"
+                 FontSize="14"
+                 FontWeight="SemiBold" />
+      <TextBlock Classes="smallLabel"
+                 TextWrapping="Wrap"
+                 Text="Инфикс → постфикс через стек → построение дерева → рекурсивное вычисление." />
+
+      <TextBlock Text="Выражение" Classes="smallLabel" />
+      <TextBox x:Name="ExpressionInput"
+               AcceptsReturn="False"
+               FontFamily="Consolas"
+               Text="(2 + 3) * (5 - 1)" />
+
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button x:Name="RandomExpressionButton"
+                Content="Случайное выражение"
+                Click="RandomExpression_Click" />
+        <Button x:Name="BuildTreeButton"
+                Content="Построить дерево"
+                Click="BuildTree_Click" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button x:Name="StartTreeButton"
+                Content="Запустить вычисление"
+                Click="StartTree_Click" />
+        <Button x:Name="StopTreeButton"
+                Content="Стоп"
+                Click="StopTree_Click" />
+        <Button x:Name="ResetTreeButton"
+                Content="Сброс"
+                Click="ResetTree_Click" />
+      </StackPanel>
+
+      <TextBlock Classes="smallLabel" Text="Постфиксная запись" />
+      <Border Background="#15263D" CornerRadius="10" Padding="10">
+        <TextBlock x:Name="PostfixText"
+                   TextWrapping="Wrap"
+                   Text="—" />
+      </Border>
+
+      <TextBlock Classes="smallLabel" Text="Результат" />
+      <Border Background="#15263D" CornerRadius="10" Padding="10">
+        <TextBlock x:Name="ResultText"
+                   Text="—"
+                   FontSize="24"
+                   FontWeight="SemiBold" />
+      </Border>
+
+      <Border Background="#15263D" CornerRadius="10" Padding="10">
+        <TextBlock x:Name="TreeStatus"
+                   TextWrapping="Wrap"
+                   Text="Введите выражение или сгенерируйте случайное." />
+      </Border>
+    </StackPanel>
+
+    <Border Background="#0C1A2B" CornerRadius="16" Padding="10">
+      <Canvas x:Name="TreeCanvas"
+              ClipToBounds="True" />
+    </Border>
+  </Grid>
+</UserControl>

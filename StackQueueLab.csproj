@@ -11,6 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DataStructuresVisualizer/**/*.cs" />
+    <EmbeddedResource Remove="DataStructuresVisualizer/**/*.axaml" />
+    <None Remove="DataStructuresVisualizer/**/*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="StackInput\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Update="QueueInput\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Update="PostfixInput\**\*.txt" CopyToOutputDirectory="PreserveNewest" />

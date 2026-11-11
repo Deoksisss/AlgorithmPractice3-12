@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:DataStructuresVisualizer.Views"
+        x:Class="DataStructuresVisualizer.Views.MainWindow"
+        Title="Data Structures Visualizer"
+        Width="1420"
+        Height="870"
+        Background="{StaticResource AppBackground}">
+  <Grid RowDefinitions="Auto,*" Margin="16">
+    <StackPanel Grid.Row="0"
+                Margin="4,0,0,12">
+      <TextBlock Text="Data Structures Visualizer"
+                 FontSize="26"
+                 FontWeight="Bold"
+                 Foreground="{StaticResource Accent}" />
+      <TextBlock Text="Стек · Очередь · Дерево — интерактивные демонстрации"
+                 Foreground="{StaticResource Muted}" />
+    </StackPanel>
+
+    <Border Grid.Row="1"
+            Background="{StaticResource PanelBackground}"
+            CornerRadius="18"
+            Padding="12">
+      <TabControl Background="Transparent"
+                  BorderThickness="0">
+        <TabItem Header="Стек: лабиринт DFS">
+          <views:MazeView />
+        </TabItem>
+        <TabItem Header="Очередь: банк / МФЦ">
+          <views:QueueView />
+        </TabItem>
+        <TabItem Header="Дерево: выражение">
+          <views:ExpressionTreeView />
+        </TabItem>
+      </TabControl>
+    </Border>
+  </Grid>
+</Window>
