@@ -10,7 +10,8 @@ public sealed class Application
     private readonly QueueLabController _queueLab;
     private readonly PostfixLabController _postfixLab;
     private readonly InfixLabController _infixLab;
-
+    private readonly LinkedListController _listLab;
+    
     public Application()
     {
         _paths = ProjectPaths.Create();
@@ -18,6 +19,9 @@ public sealed class Application
         var reports = new CsvReportWriter(_paths);
         var picker = new FilePicker();
         var expressions = new ExpressionFileService();
+        
+        // ИСПРАВЛЕНО: убран picker, так как LinkedListController теперь принимает только 2 аргумента
+        _listLab = new LinkedListController(_paths, reports);
 
         _stackLab = new StackLabController(_paths, picker, runner, reports);
         _queueLab = new QueueLabController(_paths, picker, runner, reports);
@@ -35,11 +39,12 @@ public sealed class Application
             ConsoleTheme.MenuOption("2", "Очередь", "связный список и стандартный Queue<T>");
             ConsoleTheme.MenuOption("3", "Постфиксные выражения", "вычисление и оценка сложности");
             ConsoleTheme.MenuOption("4", "Инфикс → постфикс", "ввод формулы и сохранение в InfixInput");
+            ConsoleTheme.MenuOption("5", "Связный список", "4 часть: п.9–12, замеры, CSV");
             ConsoleTheme.MenuOption("0", "Выход");
             ConsoleTheme.Rule();
 
-            var choice = ConsoleInput.ReadMenuChoice(4);
-
+            var choice = ConsoleInput.ReadMenuChoice(5);
+            
             switch (choice)
             {
                 case 0:
@@ -56,6 +61,9 @@ public sealed class Application
                     break;
                 case 4:
                     _infixLab.Run();
+                    break;
+                case 5:
+                    _listLab.Run();
                     break;
             }
         }
