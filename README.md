@@ -30,6 +30,12 @@ dotnet run -- --self-test
 dotnet run -- --self-test --include-extreme
 ```
 
+Проверка дополнительных заданий с `CustomLinkedList`:
+
+```powershell
+dotnet run -- --linked-list-test
+```
+
 ## Что реализовано
 
 | Блок | Реализация |
@@ -41,6 +47,7 @@ dotnet run -- --self-test --include-extreme
 | Инфикс → постфикс | `InfixToPostfixConverter` (shunting-yard) с приоритетами в стеке |
 | Отчёты | CSV в `output`, имя `<исходный_файл>-<дата_время>.csv` |
 | Сравнение очередей | отдельный отчёт по разной длине и разному составу операций |
+| CustomLinkedList | задания 1–8 для односвязного списка и автономные проверки |
 
 ## Структура
 
@@ -233,6 +240,37 @@ powershell -ExecutionPolicy Bypass -File .\tools\GenerateStressData.ps1 `
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\GenerateTestData.ps1
 ```
+
+## Дополнительные задания с `CustomLinkedList`
+
+Список и проверки находятся здесь:
+
+```text
+Core/Structures/CustomLinkedList.cs
+Diagnostics/LinkedListSelfTestRunner.cs
+```
+
+Реализованные методы:
+
+| Задание | Методы |
+|---|---|
+| 1. Переворот | `Reverse` |
+| 2. Перенос крайнего элемента | `MoveLastToFront`, `MoveFirstToLast` |
+| 3. Количество различных | `CountDistinct` |
+| 4. Удаление неуникальных | `RemoveNonUnique` |
+| 5. Вставка списка после `x` | `InsertSelfAfter` |
+| 6. Вставка в упорядоченный список | `InsertSorted` |
+| 7. Удаление всех `e` | `RemoveAll` |
+| 8. Вставка `f` перед `e` | `InsertBefore` |
+
+Запуск проверок:
+
+```powershell
+dotnet run -- --linked-list-test
+```
+
+Тесты проверяют пустой список, один элемент, начало, середину, конец,
+отсутствие элемента и корректность `Count` после операций.
 
 ## Замеры и отчёты
 

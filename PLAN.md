@@ -31,7 +31,8 @@ lab3/
 │   ├── Structures/
 │   │   ├── LinkedStack.cs
 │   │   ├── LinkedQueue.cs
-│   │   └── SystemQueueAdapter.cs
+│   │   ├── SystemQueueAdapter.cs
+│   │   └── CustomLinkedList.cs
 │   └── Collections/
 │       ├── StackCollectionAdapter.cs
 │       ├── LinkedQueueCollectionAdapter.cs
@@ -54,6 +55,9 @@ lab3/
 │   ├── CsvReportWriter.cs
 │   ├── QueueBenchmarkService.cs
 │   └── FileCatalog.cs
+├── Diagnostics/
+│   ├── SelfTestRunner.cs
+│   └── LinkedListSelfTestRunner.cs
 ├── UI/
 │   ├── ConsoleTheme.cs
 │   ├── ConsoleInput.cs
@@ -72,7 +76,8 @@ lab3/
 ├── InfixInput/       — инфиксные выражения (в т.ч. сохранённые пользователем)
 ├── output/           — CSV-отчёты
 └── tools/
-    └── GenerateTestData.ps1
+    ├── GenerateTestData.ps1
+    └── GenerateStressData.ps1
 ```
 
 ## 3. Абстрактные интерфейсы
@@ -244,3 +249,28 @@ CSV хранит алгоритмическое время, экран — ещ�
 
 В каждом подменю есть пункт `0 — Назад`; выбор файла также можно отменить.
 При отсутствии файлов выводится путь к папке и предложение вернуться назад.
+
+## 9. Дополнительные задания для `CustomLinkedList`
+
+Отдельный класс `CustomLinkedList` работает с целочисленным односвязным
+списком и не зависит от стека/очереди основного лабораторного задания.
+
+Реализованы и покрыты автономной диагностикой:
+
+1. `Reverse` — переворот списка изменением ссылок;
+2. `MoveLastToFront` и `MoveFirstToLast` — перенос крайнего элемента;
+3. `CountDistinct` — количество различных элементов;
+4. `RemoveNonUnique` — удаление всех значений, встречающихся более одного раза;
+5. `InsertSelfAfter` — вставка копии списка после первого `x`;
+6. `InsertSorted` — вставка в неубывающий список;
+7. `RemoveAll` — удаление всех вхождений `e`;
+8. `InsertBefore` — вставка `f` перед первым `e`.
+
+Для проверки содержимого добавлен `ToArray`. Все тесты запускаются отдельно:
+
+```powershell
+dotnet run -- --linked-list-test
+```
+
+Тесты проверяют границы: пустой список, один элемент, начало, середину,
+конец, отсутствие элемента, дубликаты и актуальность `Count`.
