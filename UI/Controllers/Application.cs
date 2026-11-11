@@ -10,6 +10,7 @@ public sealed class Application
     private readonly QueueLabController _queueLab;
     private readonly PostfixLabController _postfixLab;
     private readonly InfixLabController _infixLab;
+    private readonly LinkedListLabController _linkedLists;
 
     public Application()
     {
@@ -23,6 +24,7 @@ public sealed class Application
         _queueLab = new QueueLabController(_paths, picker, runner, reports);
         _postfixLab = new PostfixLabController(_paths, picker, expressions, reports);
         _infixLab = new InfixLabController(_paths, picker, expressions, reports);
+        _linkedLists = new LinkedListLabController();
     }
 
     public void Run()
@@ -35,10 +37,11 @@ public sealed class Application
             ConsoleTheme.MenuOption("2", "Очередь", "связный список и стандартный Queue<T>");
             ConsoleTheme.MenuOption("3", "Постфиксные выражения", "вычисление и оценка сложности");
             ConsoleTheme.MenuOption("4", "Инфикс → постфикс", "ввод формулы и сохранение в InfixInput");
+            ConsoleTheme.MenuOption("5", "Алгоритмы связного списка", "8 заданий и цветной результат");
             ConsoleTheme.MenuOption("0", "Выход");
             ConsoleTheme.Rule();
 
-            var choice = ConsoleInput.ReadMenuChoice(4);
+            var choice = ConsoleInput.ReadMenuChoice(5);
 
             switch (choice)
             {
@@ -56,6 +59,9 @@ public sealed class Application
                     break;
                 case 4:
                     _infixLab.Run();
+                    break;
+                case 5:
+                    _linkedLists.Run();
                     break;
             }
         }

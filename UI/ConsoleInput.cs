@@ -65,8 +65,22 @@ public static class ConsoleInput
         }
     }
 
-    public static bool Confirm(string question)
+    public static int ReadInt(string prompt)
     {
+        while (true)
+        {
+            var value = ReadLine(prompt);
+
+            if (int.TryParse(value, out var number))
+            {
+                return number;
+            }
+
+            ConsoleTheme.Warning("Введите целое число.");
+        }
+    }
+
+    public static bool Confirm(string question)    {
         while (true)
         {
             var answer = ReadLine(question + " (д/н)");
