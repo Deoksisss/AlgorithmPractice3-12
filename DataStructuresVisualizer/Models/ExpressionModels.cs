@@ -16,7 +16,10 @@ public sealed class ExpressionNode
 
     public double Y { get; set; }
 
-    public List<string> PostfixTokens { get; } = [];
+    /// <summary>
+    /// Канонический ключ узла в постфиксной форме. Используется для LRU-кэша.
+    /// </summary>
+    public string Key { get; set; } = string.Empty;
 
     public ExpressionNode? Parent { get; set; }
 }
@@ -24,4 +27,5 @@ public sealed class ExpressionNode
 public sealed record EvaluationStep(
     ExpressionNode Node,
     double Value,
-    string Description);
+    string Description,
+    bool FromCache);

@@ -28,6 +28,10 @@
       <Setter Property="Background" Value="#1E8C66" />
       <Setter Property="BorderBrush" Value="#A5F2D3" />
     </Style>
+    <Style Selector="Border.exprNode.cached">
+      <Setter Property="Background" Value="#2563EB" />
+      <Setter Property="BorderBrush" Value="#BFD4FF" />
+    </Style>
     <Style Selector="Line.edge">
       <Setter Property="Stroke" Value="#406083" />
       <Setter Property="StrokeThickness" Value="2" />
@@ -87,6 +91,13 @@
                    Text="—"
                    FontSize="24"
                    FontWeight="SemiBold" />
+      </Border>
+
+      <TextBlock Classes="smallLabel" Text="LRU-хеш-кэш" />
+      <Border Background="#15263D" CornerRadius="10" Padding="10">
+        <TextBlock x:Name="LruCacheText"
+                   TextWrapping="Wrap"
+                   Text="LRU: 0/96 · попаданий 0 · промахов 0 · вытеснений 0" />
       </Border>
 
       <Border Background="#15263D" CornerRadius="10" Padding="10">

@@ -123,7 +123,8 @@ public static class ExpressionService
                     Value = token,
                     IsOperator = true,
                     Left = left,
-                    Right = right
+                    Right = right,
+                    Key = $"{left.Key} {right.Key} {token}"
                 };
 
                 left.Parent = node;
@@ -141,7 +142,8 @@ public static class ExpressionService
                 {
                     Value = token,
                     IsOperator = false,
-                    Result = value
+                    Result = value,
+                    Key = token
                 });
             }
         }
@@ -154,9 +156,15 @@ public static class ExpressionService
         return stack.Pop();
     }
 
-    public static double Evaluate(ExpressionNode root, List<EvaluationStep> steps)
+    public static double Evaluate(ExpressionNode root, List<EvaluationStep> steps) =>
+        Evaluate(root, steps, null);
+
+    public static double Evaluate(
+        ExpressionNode root,
+        List<EvaluationStep> steps,
+        LruExpressionCache? cache)
     {
-        return EvaluateRecursive(root, steps);
+        return EvaluateRecursive(root, steps, cache);
     }
 
     public static double Layout(ExpressionNode root)
@@ -195,17 +203,32 @@ public static class ExpressionService
         return Build(random.Next(2, maxDepth + 1));
     }
 
-    private static double EvaluateRecursive(ExpressionNode node, List<EvaluationStep> steps)
+    private static double EvaluateRecursive(
+        ExpressionNode node,
+        List<EvaluationStep> steps,
+        LruExpressionCache? cache)
     {
         if (!node.IsOperator)
         {
             node.Result = double.Parse(node.Value, CultureInfo.InvariantCulture);
-            steps.Add(new EvaluationStep(node, node.Result, $"Лист: {node.Value} = {Format(node.Result)}"));
+            steps.Add(new EvaluationStep(node, node.Result, $"Лист: {node.Value} = {Format(node.Result)}", false));
             return node.Result;
         }
 
-        var left = EvaluateRecursive(node.Left!, steps);
-        var right = EvaluateRecursive(node.Right!, steps);
+        if (cache is not null && cache.TryGet(node.Key, out var cachedResult))
+        {
+            node.Result = cachedResult;
+            steps.Add(new EvaluationStep(
+                node,
+                cachedResult,
+                $"LRU-хит: {node.Key} = {Format(cachedResult)}",
+                true));
+
+            return cachedResult;
+        }
+
+        var left = EvaluateRecursive(node.Left!, steps, cache);
+        var right = EvaluateRecursive(node.Right!, steps, cache);
 
         double result;
 
@@ -236,8 +259,10 @@ public static class ExpressionService
         steps.Add(new EvaluationStep(
             node,
             result,
-            $"{node.Left!.Value} {node.Value} {node.Right!.Value} = {Format(result)}"));
+            $"{node.Left!.Value} {node.Value} {node.Right!.Value} = {Format(result)}",
+            false));
 
+        cache?.Put(node.Key, result);
         return result;
     }
 

@@ -14,6 +14,7 @@ public partial class ExpressionTreeView : UserControl
     private const double NodeHeight = 44;
 
     private readonly Dictionary<ExpressionNode, Border> visuals = [];
+    private readonly LruExpressionCache _lruCache = new(96);
 
     private DispatcherTimer? timer;
     private ExpressionNode? root;
@@ -38,6 +39,7 @@ public partial class ExpressionTreeView : UserControl
     private Canvas TreeSurface => Require<Canvas>("TreeCanvas");
     private TextBlock PostfixLabel => Require<TextBlock>("PostfixText");
     private TextBlock ResultLabel => Require<TextBlock>("ResultText");
+    private TextBlock LruCacheLabel => Require<TextBlock>("LruCacheText");
     private TextBlock StatusLabel => Require<TextBlock>("TreeStatus");
 
     private void RandomExpression_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -72,10 +74,11 @@ public partial class ExpressionTreeView : UserControl
 
         try
         {
-            var value = ExpressionService.Evaluate(root, evaluationSteps);
+            var value = ExpressionService.Evaluate(root, evaluationSteps, _lruCache);
             steps = evaluationSteps;
             stepIndex = 0;
             ResultLabel.Text = Format(value);
+            LruCacheLabel.Text = _lruCache.Describe();
             timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(650)
@@ -101,8 +104,10 @@ public partial class ExpressionTreeView : UserControl
     {
         StopAnimation();
         ClearNodeStates();
+        _lruCache.Clear();
+        LruCacheLabel.Text = _lruCache.Describe();
         ResultLabel.Text = "—";
-        StatusLabel.Text = "Анимация сброшена.";
+        StatusLabel.Text = "Анимация и LRU-кэш сброшены.";
     }
 
     private void Timer_Tick(object? sender, EventArgs e)
@@ -243,9 +248,10 @@ public partial class ExpressionTreeView : UserControl
         }
 
         var current = steps[index];
-        visuals[current.Node].Classes.Add("current");
+        visuals[current.Node].Classes.Add(current.FromCache ? "cached" : "current");
         StatusLabel.Text = current.Description;
         ResultLabel.Text = Format(current.Value);
+        LruCacheLabel.Text = _lruCache.Describe();
     }
 
     private void ClearNodeStates()
@@ -254,6 +260,7 @@ public partial class ExpressionTreeView : UserControl
         {
             border.Classes.Remove("current");
             border.Classes.Remove("done");
+            border.Classes.Remove("cached");
         }
     }
 
