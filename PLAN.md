@@ -77,6 +77,10 @@ lab3/
 ├── QueueInput/       — наборы операций очереди и файлы для сравнения
 ├── PostfixInput/     — постфиксные выражения
 ├── InfixInput/       — инфиксные выражения (в т.ч. сохранённые пользователем)
+├── DataStructuresVisualizer/ — отдельный Avalonia-проект
+│   ├── Views/ MainWindow, MazeView, QueueView, ExpressionTreeView
+│   ├── Services/ MazeService, BankService, ExpressionService
+│   └── Models/ MazeModels, BankModels, ExpressionModels
 ├── output/           — CSV-отчёты
 └── tools/
     ├── GenerateTestData.ps1
@@ -294,3 +298,29 @@ dotnet run -- --linked-list-test
 
 Тесты проверяют границы: пустой список, один элемент, начало, середину,
 конец, отсутствие элемента, дубликаты и актуальность `Count`.
+
+## 10. Avalonia-визуализатор
+
+Новый проект `DataStructuresVisualizer` добавлен к решению как отдельная
+графическая демонстрация.
+
+### Структура
+
+- `Views/MainWindow.axaml` — вкладки трёх demos;
+- `Views/MazeView.axaml` — DFS-лабиринт и стек;
+- `Views/QueueView.axaml` — банк/МФЦ и очередь;
+- `Views/TreeView.axaml` — дерево арифметического выражения;
+- `Services/MazeService.cs` — генерация, разбор и пошаговый DFS;
+- `Services/BankService.cs` — генерация и разбор клиентов;
+- `Services/ExpressionService.cs` — инфикс → постфикс, построение дерева,
+  раскладка и вычисление;
+- `Models/` — `MazePoint`, `BankCustomer`, `ExpressionNode`, шаги анимаций.
+
+### Логика анимаций
+
+- Лаборинт: клетки получают классы `visited`, `stackCell`, `current`, `dead`,
+  `pathCell`; изменения цвета анимируются `BrushTransition`.
+- Банк: клиенты добавляются в `Canvas`, их `Canvas.Left` и `Canvas.Top`
+  меняются с `DoubleTransition`; кассир меняет состояние через классы.
+- Дерево: узлы и рёбра отрисовываются на `Canvas`; выделение текущего узла
+  и уже вычисленных узлов выполняется через классы `current` и `done`.

@@ -36,6 +36,12 @@ dotnet run -- --self-test --include-extreme
 dotnet run -- --linked-list-test
 ```
 
+Интерактивный графический визуализатор на Avalonia:
+
+```powershell
+dotnet run --project DataStructuresVisualizer/DataStructuresVisualizer.csproj
+```
+
 ## Что реализовано
 
 | Блок | Реализация |
@@ -56,17 +62,19 @@ dotnet run -- --linked-list-test
 Core/
   Interfaces/   IStackADT, IQueueADT, ILinearCollection,
                 IExpressionConverter, IPostfixEvaluator
-  Structures/   LinkedStack, LinkedQueue, SystemQueueAdapter
+  Structures/   LinkedStack, LinkedQueue, SystemQueueAdapter,
+                CustomLinkedList
   Collections/  адаптеры для единого исполнителя операций
 Models/         операции, наборы, результаты, сложность, бенчмарк
 Services/       разбор файлов, замеры, CSV, выражения, бенчмарк
 UI/             тема, меню, ввод, выбор файлов
 UI/Controllers/ сценарии разделов
-Diagnostics/    --self-test
+Diagnostics/    --self-test, --linked-list-test
 StackInput/     наборы операций стека
 QueueInput/     наборы операций очереди
 PostfixInput/   постфиксные выражения
 InfixInput/     инфиксные выражения и файлы пользователя
+DataStructuresVisualizer/ Avalonia-проект визуализации
 output/         CSV-отчёты
 tools/          генератор тестовых данных
 ```
@@ -286,6 +294,43 @@ dotnet run -- --linked-list-test
 
 Тесты проверяют пустой список, один элемент, начало, середину, конец,
 отсутствие элемента и корректность `Count` после операций.
+
+## Avalonia-визуализатор
+
+Отдельный проект:
+
+```text
+DataStructuresVisualizer/
+```
+
+Запуск:
+
+```powershell
+dotnet run --project DataStructuresVisualizer/DataStructuresVisualizer.csproj
+```
+
+Интерфейс содержит три вкладки:
+
+1. **Стек: лабиринт DFS**
+   - случайный или ручной лабиринт;
+   - символы `#`, `.`, `S`, `E`;
+   - плавная анимация Push/Pop, обхода, тупиков и итогового пути;
+   - справа показывается текущее состояние стека.
+2. **Очередь: банк / МФЦ**
+   - случайная смена или ручные клиенты в формате
+     `Имя, минута прихода, минуты обслуживания`;
+   - анимированная очередь FIFO и рабочее место кассира;
+   - живая статистика: всего клиентов, обслужено, ожидание, загрузка, простой.
+3. **Дерево: арифметическое выражение**
+   - случайное или ручное выражение;
+   - перевод в постфиксную запись через стек;
+   - построение бинарного дерева;
+   - пошаговая подсветка пост-порядкового вычисления;
+   - результат выражения.
+
+В каждом разделе есть кнопка запуска, остановка и сброс. Проект использует
+Avalonia 11.1, темный Fluent-стиль, переходы `BrushTransition` и
+`DoubleTransition` для анимации цвета и положения элементов.
 
 ## Замеры и отчёты
 
