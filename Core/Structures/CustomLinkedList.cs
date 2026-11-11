@@ -59,6 +59,20 @@ public class CustomLinkedList
         Console.WriteLine();
     }
 
+    public IReadOnlyList<int> ToArray()
+    {
+        var values = new List<int>(Count);
+        var current = _head;
+
+        while (current != null)
+        {
+            values.Add(current.Value);
+            current = current.Next;
+        }
+
+        return values;
+    }
+
     // 1. Переворот списка
     public void Reverse()
     {
@@ -90,6 +104,24 @@ public class CustomLinkedList
         prev!.Next = null;
         curr.Next = _head;
         _head = curr;
+    }
+
+    // 2. Перенос первого элемента в конец
+    public void MoveFirstToLast()
+    {
+        if (_head == null || _head.Next == null) return;
+
+        var first = _head;
+        _head = first.Next;
+
+        var current = _head;
+        while (current.Next != null)
+        {
+            current = current.Next;
+        }
+
+        current.Next = first;
+        first.Next = null;
     }
 
     // 3. Подсчет количества различных элементов
