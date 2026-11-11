@@ -103,7 +103,7 @@
       </Border>
     </StackPanel>
 
-    <Border Background="#0C1A2B" CornerRadius="16" Padding="10">
+    <Border Grid.Column="1" Background="#0C1A2B" CornerRadius="16" Padding="10">
       <Grid RowDefinitions="Auto,*">
         <TextBlock x:Name="ClockText"
                    HorizontalAlignment="Center"

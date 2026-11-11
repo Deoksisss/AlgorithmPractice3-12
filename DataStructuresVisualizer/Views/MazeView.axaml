@@ -112,7 +112,8 @@
       </Border>
     </StackPanel>
 
-    <Border Background="#0C1A2B"
+    <Border Grid.Column="1"
+            Background="#0C1A2B"
             CornerRadius="16"
             Padding="10">
       <Canvas x:Name="MazeCanvas"
