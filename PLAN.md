@@ -306,12 +306,18 @@ dotnet run -- --linked-list-test
 
 ### Структура
 
-- `Views/MainWindow.axaml` — вкладки трёх demos;
+- `Views/MainWindow.axaml` — левая навигация по пяти разделам;
+- `Views/StackDemoView.axaml` — стек с операциями и анимацией карточек;
+- `Views/InfixPostfixView.axaml` — пошаговое преобразование инфиксной записи;
+- `Views/QueueDemoView.axaml` — две реализации очереди и замеры;
+- `Views/ExamplesView.axaml` — три готовые визуализации раздела 3;
 - `Views/MazeView.axaml` — DFS-лабиринт и стек;
 - `Views/QueueView.axaml` — банк/МФЦ и очередь;
 - `Views/TreeView.axaml` — дерево арифметического выражения;
+- `Views/LinkedListAlgorithmsView.axaml` — 8 алгоритмов со связным списком;
 - `Services/MazeService.cs` — генерация, разбор и пошаговый DFS;
 - `Services/BankService.cs` — генерация и разбор клиентов;
+- `Services/InfixConversionService.cs` — кадры алгоритма shunting-yard;
 - `Services/ExpressionService.cs` — инфикс → постфикс, построение дерева,
   раскладка и вычисление;
 - `Models/` — `MazePoint`, `BankCustomer`, `ExpressionNode`, шаги анимаций.

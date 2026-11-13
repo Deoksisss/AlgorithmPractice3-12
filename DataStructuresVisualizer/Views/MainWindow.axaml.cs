@@ -39,17 +39,21 @@ public partial class MainWindow : Window
 
     private void SelectPage(int index)
     {
-        var maze = this.FindControl<MazeView>("MazePage");
-        var queue = this.FindControl<QueueView>("QueuePage");
-        var tree = this.FindControl<ExpressionTreeView>("TreePage");
+        var stack = this.FindControl<StackDemoView>("StackDemoPage");
+        var infix = this.FindControl<InfixPostfixView>("InfixPage");
+        var queue = this.FindControl<QueueDemoView>("QueueDemoPage");
+        var examples = this.FindControl<ExamplesView>("ExamplesPage");
+        var linkedList = this.FindControl<LinkedListAlgorithmsView>("LinkedListPage");
 
-        if (maze is null || queue is null || tree is null)
+        if (stack is null || infix is null || queue is null || examples is null || linkedList is null)
         {
             return;
         }
 
-        maze.IsVisible = index == 0;
-        queue.IsVisible = index == 1;
-        tree.IsVisible = index == 2;
+        stack.IsVisible = index == 0;
+        infix.IsVisible = index == 1;
+        queue.IsVisible = index == 2;
+        examples.IsVisible = index == 3;
+        linkedList.IsVisible = index == 4;
     }
 }

@@ -3,10 +3,10 @@
         xmlns:views="using:DataStructuresVisualizer.Views"
         x:Class="DataStructuresVisualizer.Views.MainWindow"
         Title="Data Structures Visualizer"
-        Width="1420"
-        Height="870"
-        MinWidth="1080"
-        MinHeight="700"
+        Width="1200"
+        Height="680"
+        MinWidth="1020"
+        MinHeight="620"
         Background="{StaticResource AppBackground}">
   <Window.Styles>
     <Style Selector="ListBox.sidebar">
@@ -34,17 +34,17 @@
     </Style>
   </Window.Styles>
 
-  <Grid RowDefinitions="Auto,*" Margin="24,20,24,22">
-    <StackPanel Grid.Row="0" Margin="2,0,0,16">
+  <Grid RowDefinitions="Auto,*" Margin="24,18,24,20">
+    <StackPanel Grid.Row="0" Margin="2,0,0,14">
       <TextBlock Text="Data Structures Visualizer"
                  FontSize="26"
                  FontWeight="Bold"
                  Foreground="{StaticResource Accent}" />
-      <TextBlock Text="Стек · Очередь · Дерево — интерактивные демонстрации"
+      <TextBlock Text="Динамические структуры данных и алгоритмы"
                  Foreground="{StaticResource Muted}" />
     </StackPanel>
 
-    <Grid Grid.Row="1" ColumnDefinitions="252,*">
+    <Grid Grid.Row="1" ColumnDefinitions="286,*">
       <Border Grid.Column="0"
               Background="{StaticResource PanelBackground}"
               CornerRadius="18"
@@ -61,30 +61,54 @@
                    SelectionChanged="NavigationList_SelectionChanged">
             <ListBoxItem>
               <StackPanel Spacing="2">
-                <TextBlock Text="Стек"
+                <TextBlock Text="Раздел 1. Стек"
                            FontSize="14"
                            FontWeight="SemiBold" />
-                <TextBlock Text="Лабиринт и DFS"
+                <TextBlock Text="Push · Pop · Top · isEmpty · Print"
+                           FontSize="11"
+                           Foreground="{StaticResource Muted}"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem>
+              <StackPanel Spacing="2">
+                <TextBlock Text="Раздел 1.5. Преобразование инфиксных выражений"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="Инфиксная запись → постфиксная"
                            FontSize="11"
                            Foreground="{StaticResource Muted}" />
               </StackPanel>
             </ListBoxItem>
             <ListBoxItem>
               <StackPanel Spacing="2">
-                <TextBlock Text="Очередь"
+                <TextBlock Text="Раздел 2. Очередь"
                            FontSize="14"
                            FontWeight="SemiBold" />
-                <TextBlock Text="Банк и МФЦ"
+                <TextBlock Text="Связная очередь и Queue&lt;T&gt;"
                            FontSize="11"
                            Foreground="{StaticResource Muted}" />
               </StackPanel>
             </ListBoxItem>
             <ListBoxItem>
               <StackPanel Spacing="2">
-                <TextBlock Text="Дерево"
+                <TextBlock Text="Раздел 3. Примеры динамических структур"
                            FontSize="14"
-                           FontWeight="SemiBold" />
-                <TextBlock Text="Арифметическое выражение"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="Лабиринт · банк · дерево выражения"
+                           FontSize="11"
+                           Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem>
+              <StackPanel Spacing="2">
+                <TextBlock Text="Раздел 4. Алгоритмы со связными списками"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="8 алгоритмов с анимацией"
                            FontSize="11"
                            Foreground="{StaticResource Muted}" />
               </StackPanel>
@@ -96,9 +120,10 @@
                   CornerRadius="10"
                   Padding="10"
                   Margin="2,10,2,2">
-            <TextBlock Text="3 интерактивные модели"
+            <TextBlock Text="5 разделов · визуальные демонстрации"
                        Foreground="{StaticResource Muted}"
-                       FontSize="11" />
+                       FontSize="11"
+                       TextWrapping="Wrap" />
           </Border>
         </Grid>
       </Border>
@@ -109,9 +134,11 @@
               Padding="14"
               Margin="14,0,0,0">
         <Grid>
-          <views:MazeView x:Name="MazePage" />
-          <views:QueueView x:Name="QueuePage" IsVisible="False" />
-          <views:ExpressionTreeView x:Name="TreePage" IsVisible="False" />
+          <views:StackDemoView x:Name="StackDemoPage" />
+          <views:InfixPostfixView x:Name="InfixPage" IsVisible="False" />
+          <views:QueueDemoView x:Name="QueueDemoPage" IsVisible="False" />
+          <views:ExamplesView x:Name="ExamplesPage" IsVisible="False" />
+          <views:LinkedListAlgorithmsView x:Name="LinkedListPage" IsVisible="False" />
         </Grid>
       </Border>
     </Grid>

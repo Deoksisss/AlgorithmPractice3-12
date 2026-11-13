@@ -1,0 +1,120 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DataStructuresVisualizer.Views.InfixPostfixView">
+  <UserControl.Styles>
+    <Style Selector="Border.token">
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="Margin" Value="0,0,6,6" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Background" Value="#1C3550" />
+      <Setter Property="BorderBrush" Value="#35597D" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.2" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.token.current">
+      <Setter Property="Background" Value="#8A5CF6" />
+      <Setter Property="BorderBrush" Value="#D9C7FF" />
+    </Style>
+    <Style Selector="Border.token.output">
+      <Setter Property="Background" Value="#1E6C5B" />
+      <Setter Property="BorderBrush" Value="#71DEC1" />
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="Foreground" Value="{StaticResource Accent}" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.panelLabel">
+      <Setter Property="Foreground" Value="{StaticResource Muted}" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="310,*,240">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="0,0,12,0" Spacing="9">
+      <TextBlock Classes="sectionTitle" Text="Раздел 1.5. Инфикс → постфикс" />
+      <TextBlock TextWrapping="Wrap"
+                 Foreground="{StaticResource Muted}"
+                 Text="Алгоритм Дейкстры: числа сразу идут в выход, операторы временно хранятся в стеке с учётом приоритета." />
+
+      <TextBlock Classes="panelLabel" Text="Инфиксное выражение" />
+      <TextBox x:Name="InfixExpressionInput"
+               FontFamily="Consolas"
+               Text="(2 + 3) * (5 - 1)" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Случайное" Click="RandomExpression_Click" />
+        <Button Content="Построить" Click="Build_Click" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Запустить анимацию" Click="Start_Click" />
+        <Button Content="Стоп" Click="Stop_Click" />
+        <Button Content="Сброс" Click="Reset_Click" />
+      </StackPanel>
+      <TextBlock Classes="panelLabel" Text="Скорость шага" />
+      <Slider x:Name="ConversionSpeedSlider" Minimum="100" Maximum="1200" Value="500" />
+      <Border Background="#15263D" CornerRadius="10" Padding="10">
+        <TextBlock x:Name="ConversionStatus" TextWrapping="Wrap" Text="Введите выражение." />
+      </Border>
+      <Border Background="#15263D" CornerRadius="10" Padding="10">
+        <StackPanel Spacing="5">
+          <TextBlock Classes="panelLabel" Text="Итоговая постфиксная запись" />
+          <TextBlock x:Name="FinalPostfixText" Text="—" FontFamily="Consolas" TextWrapping="Wrap" />
+          <TextBlock Classes="panelLabel" Text="Значение" />
+          <TextBlock x:Name="FinalValueText" Text="—" FontSize="22" FontWeight="SemiBold" />
+        </StackPanel>
+      </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto,Auto">
+      <Border Grid.Row="0" Background="#0C1A2B" CornerRadius="16" Padding="12">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionTitle" Text="Входные токены" />
+          <WrapPanel x:Name="InfixTokensPanel" />
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Row="1" Background="#0C1A2B" CornerRadius="16" Padding="12">
+        <Grid RowDefinitions="Auto,*">
+          <TextBlock Grid.Row="0" Classes="sectionTitle" Text="Стек операторов" />
+          <ScrollViewer Grid.Row="1">
+            <StackPanel x:Name="OperatorStackPanel" Spacing="6" />
+          </ScrollViewer>
+        </Grid>
+      </Border>
+
+      <Border Grid.Row="2" Background="#0C1A2B" CornerRadius="16" Padding="12">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionTitle" Text="Выходная постфиксная запись" />
+          <WrapPanel x:Name="PostfixOutputPanel" />
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Row="3" Background="#15263D" CornerRadius="12" Padding="12">
+        <TextBlock x:Name="StepExplanationText"
+                   TextWrapping="Wrap"
+                   Foreground="{StaticResource Muted}"
+                   Text="Шаги появятся после запуска." />
+      </Border>
+    </Grid>
+
+    <Border Grid.Column="2" Background="#15263D" CornerRadius="14" Padding="14" Margin="12,0,0,0">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="sectionTitle" Text="Как читать анимацию" />
+        <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}"
+                   Text="Фиолетовым выделяется токен, который читается сейчас. Стек показывает операторы в порядке LIFO. Зелёная лента — уже сформированная постфиксная запись." />
+        <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}"
+                   Text="Скобки управляют выталкиванием операторов, а приоритет * и / выше, чем + и -." />
+        <Border Background="#102033" CornerRadius="10" Padding="10">
+          <TextBlock x:Name="ConversionCounterText" Text="Шаг: 0 / 0" />
+        </Border>
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

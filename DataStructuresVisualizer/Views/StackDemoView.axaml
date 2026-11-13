@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DataStructuresVisualizer.Views.StackDemoView">
+  <UserControl.Styles>
+    <Style Selector="Border.stackCard">
+      <Setter Property="Width" Value="230" />
+      <Setter Property="Height" Value="54" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Background" Value="#1E5269" />
+      <Setter Property="BorderBrush" Value="#67D6E8" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BoxShadow" Value="0 4 12 0 #33000000" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Canvas.Top" Duration="0:0:0.32" />
+          <DoubleTransition Property="Opacity" Duration="0:0:0.22" />
+          <BrushTransition Property="Background" Duration="0:0:0.2" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Border.stackCard.topCard">
+      <Setter Property="Background" Value="#8A5CF6" />
+      <Setter Property="BorderBrush" Value="#D9C7FF" />
+    </Style>
+    <Style Selector="TextBlock.panelLabel">
+      <Setter Property="Foreground" Value="{StaticResource Muted}" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="Foreground" Value="{StaticResource Accent}" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="300,*,250">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="0,0,12,0" Spacing="9">
+      <TextBlock Classes="sectionTitle" Text="Раздел 1. Стек" />
+      <TextBlock TextWrapping="Wrap"
+                 Foreground="{StaticResource Muted}"
+                 Text="Push добавляет на вершину, Pop снимает вершину. Стек работает по принципу LIFO." />
+
+      <TextBlock Classes="panelLabel" Text="Значение" />
+      <TextBox x:Name="StackValueInput" Text="42" />
+      <UniformGrid Columns="2" Rows="3">
+        <Button Content="Push" Margin="0,0,4,4" Click="Push_Click" />
+        <Button Content="Pop" Margin="4,0,0,4" Click="Pop_Click" />
+        <Button Content="Top" Margin="0,4,4,4" Click="Top_Click" />
+        <Button Content="isEmpty" Margin="4,4,0,4" Click="IsEmpty_Click" />
+        <Button Content="Print" Margin="0,4,4,0" Click="Print_Click" />
+        <Button Content="Случайные" Margin="4,4,0,0" Click="RandomSequence_Click" />
+      </UniformGrid>
+
+      <TextBlock Classes="panelLabel" Text="Набор операций (1,значение 2 3 4 5)" />
+      <TextBox x:Name="StackSequenceInput"
+               Height="105"
+               AcceptsReturn="True"
+               FontFamily="Consolas"
+               Text="1,56 1,7 1,cat 2 5 4" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Выполнить набор" Click="RunSequence_Click" />
+        <Button Content="Стоп" Click="StopSequence_Click" />
+      </StackPanel>
+      <Button Content="Сбросить стек" HorizontalAlignment="Stretch" Click="Reset_Click" />
+      <Border Background="#15263D" CornerRadius="10" Padding="10">
+        <TextBlock x:Name="StackStatus" TextWrapping="Wrap" Text="Стек пуст." />
+      </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border Grid.Column="1" Background="#0C1A2B" CornerRadius="16" Padding="10">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto"
+                    ClipToBounds="True">
+        <Canvas x:Name="StackCanvas"
+                Width="290"
+                Height="480"
+                ClipToBounds="True">
+          <TextBlock Text="ВЕРШИНА"
+                     Canvas.Left="26"
+                     Canvas.Top="8"
+                     Foreground="{StaticResource Muted}"
+                     FontSize="10" />
+        </Canvas>
+      </ScrollViewer>
+    </Border>
+
+    <StackPanel Grid.Column="2" Margin="12,0,0,0" Spacing="10">
+      <Border Background="#15263D" CornerRadius="12" Padding="12">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="sectionTitle" Text="Состояние" />
+          <TextBlock x:Name="StackCountText"
+                     Text="Элементов: 0"
+                     Foreground="{StaticResource Muted}" />
+          <TextBlock x:Name="StackTopText"
+                     Text="Вершина: —"
+                     Foreground="{StaticResource Muted}" />
+        </StackPanel>
+      </Border>
+      <Border Background="#15263D" CornerRadius="12" Padding="12">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionTitle" Text="Журнал" />
+          <ListBox x:Name="StackLogList" Height="500" Background="Transparent" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Grid>
+</UserControl>
