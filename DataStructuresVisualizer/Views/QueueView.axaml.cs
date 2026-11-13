@@ -177,7 +177,18 @@ public partial class QueueView : UserControl
         waiting.Add(customer);
         customerVisuals.Add(visual);
 
-        PositionWaiting();
+        var layoutTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(25)
+        };
+
+        layoutTimer.Tick += (_, _) =>
+        {
+            layoutTimer.Stop();
+            PositionWaiting();
+        };
+
+        layoutTimer.Start();
     }
 
     private Border CreateCustomerVisual(BankCustomer customer)
@@ -198,7 +209,8 @@ public partial class QueueView : UserControl
             FontSize = 10
         };
 
-        Canvas.SetLeft(border, QueueStartX + waiting.Count * SlotWidth);
+        var targetX = QueueStartX + waiting.Count * SlotWidth;
+        Canvas.SetLeft(border, targetX + 150);
         Canvas.SetTop(border, QueueY);
         canvas.Children.Add(border);
 

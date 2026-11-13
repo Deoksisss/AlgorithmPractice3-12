@@ -228,8 +228,9 @@ public partial class QueueDemoView : UserControl
 
         AddCard(LinkedCanvas, linkedCards, value);
         AddCard(StandardCanvas, standardCards, value);
-        LayoutLane(LinkedCanvas, linkedCards);
-        LayoutLane(StandardCanvas, standardCards);
+        ScheduleLayout(LinkedCanvas, linkedCards);
+        ScheduleLayout(StandardCanvas, standardCards);
+
         LinkedTimeLabel.Text = $"Enqueue: {linkedWatch.Elapsed.TotalMilliseconds:0.######} мс";
         StandardTimeLabel.Text = $"Enqueue: {standardWatch.Elapsed.TotalMilliseconds:0.######} мс";
         AppendLog($"Enqueue({value})");
@@ -281,8 +282,12 @@ public partial class QueueDemoView : UserControl
         cardList.Add(border);
 
         var index = cardList.Count - 1;
-        Canvas.SetLeft(border, CardLeft + index * (CardWidth + CardGap));
+        var targetX = CardLeft + index * (CardWidth + CardGap);
+        var startX = targetX + 160;
+
+        Canvas.SetLeft(border, startX);
         Canvas.SetTop(border, CardTop);
+        canvas.Width = Math.Max(canvas.Width, startX + CardWidth + 24);
     }
 
     private static void RemoveFirstCard(Canvas canvas, List<Border> cardList)
@@ -317,7 +322,7 @@ public partial class QueueDemoView : UserControl
     private static void LayoutLane(Canvas canvas, List<Border> cardList)
     {
         var required = CardLeft + cardList.Count * (CardWidth + CardGap) + CardLeft;
-        canvas.Width = Math.Max(720, required);
+        canvas.Width = Math.Max(720, required + 180);
         canvas.Height = 96;
 
         for (var i = 0; i < cardList.Count; i++)
@@ -331,6 +336,22 @@ public partial class QueueDemoView : UserControl
                 cardList[i].Classes.Add("headCard");
             }
         }
+    }
+
+    private static void ScheduleLayout(Canvas canvas, List<Border> cardList)
+    {
+        var timer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(25)
+        };
+
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            LayoutLane(canvas, cardList);
+        };
+
+        timer.Start();
     }
 
     private void UpdateState()
