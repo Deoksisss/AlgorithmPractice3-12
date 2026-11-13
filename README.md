@@ -309,7 +309,7 @@ DataStructuresVisualizer/
 dotnet run --project DataStructuresVisualizer/DataStructuresVisualizer.csproj
 ```
 
-Интерфейс содержит три вкладки:
+Интерфейс содержит три раздела в левой навигационной панели:
 
 1. **Стек: лабиринт DFS**
    - случайный или ручной лабиринт;

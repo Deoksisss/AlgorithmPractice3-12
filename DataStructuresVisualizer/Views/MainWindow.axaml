@@ -5,10 +5,37 @@
         Title="Data Structures Visualizer"
         Width="1420"
         Height="870"
+        MinWidth="1080"
+        MinHeight="700"
         Background="{StaticResource AppBackground}">
-  <Grid RowDefinitions="Auto,*" Margin="16">
-    <StackPanel Grid.Row="0"
-                Margin="4,0,0,12">
+  <Window.Styles>
+    <Style Selector="ListBox.sidebar">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="ListBox.sidebar ListBoxItem">
+      <Setter Property="Padding" Value="12,10" />
+      <Setter Property="Margin" Value="0,2" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.18" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="ListBox.sidebar ListBoxItem:selected">
+      <Setter Property="Background" Value="#1A3A50" />
+    </Style>
+    <Style Selector="TextBlock.sidebarSection">
+      <Setter Property="Foreground" Value="{StaticResource Muted}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,*" Margin="24,20,24,22">
+    <StackPanel Grid.Row="0" Margin="2,0,0,16">
       <TextBlock Text="Data Structures Visualizer"
                  FontSize="26"
                  FontWeight="Bold"
@@ -17,22 +44,76 @@
                  Foreground="{StaticResource Muted}" />
     </StackPanel>
 
-    <Border Grid.Row="1"
-            Background="{StaticResource PanelBackground}"
-            CornerRadius="18"
-            Padding="12">
-      <TabControl Background="Transparent"
-                  BorderThickness="0">
-        <TabItem Header="Стек: лабиринт DFS">
-          <views:MazeView />
-        </TabItem>
-        <TabItem Header="Очередь: банк / МФЦ">
-          <views:QueueView />
-        </TabItem>
-        <TabItem Header="Дерево: выражение">
-          <views:ExpressionTreeView />
-        </TabItem>
-      </TabControl>
-    </Border>
+    <Grid Grid.Row="1" ColumnDefinitions="252,*">
+      <Border Grid.Column="0"
+              Background="{StaticResource PanelBackground}"
+              CornerRadius="18"
+              Padding="14">
+        <Grid RowDefinitions="Auto,*,Auto">
+          <TextBlock Grid.Row="0"
+                     Classes="sidebarSection"
+                     Margin="8,4,8,10"
+                     Text="РАЗДЕЛЫ" />
+
+          <ListBox Grid.Row="1"
+                   x:Name="NavigationList"
+                   Classes="sidebar"
+                   SelectionChanged="NavigationList_SelectionChanged">
+            <ListBoxItem>
+              <StackPanel Spacing="2">
+                <TextBlock Text="Стек"
+                           FontSize="14"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="Лабиринт и DFS"
+                           FontSize="11"
+                           Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem>
+              <StackPanel Spacing="2">
+                <TextBlock Text="Очередь"
+                           FontSize="14"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="Банк и МФЦ"
+                           FontSize="11"
+                           Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </ListBoxItem>
+            <ListBoxItem>
+              <StackPanel Spacing="2">
+                <TextBlock Text="Дерево"
+                           FontSize="14"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="Арифметическое выражение"
+                           FontSize="11"
+                           Foreground="{StaticResource Muted}" />
+              </StackPanel>
+            </ListBoxItem>
+          </ListBox>
+
+          <Border Grid.Row="2"
+                  Background="#102033"
+                  CornerRadius="10"
+                  Padding="10"
+                  Margin="2,10,2,2">
+            <TextBlock Text="3 интерактивные модели"
+                       Foreground="{StaticResource Muted}"
+                       FontSize="11" />
+          </Border>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1"
+              Background="{StaticResource PanelBackground}"
+              CornerRadius="18"
+              Padding="14"
+              Margin="14,0,0,0">
+        <Grid>
+          <views:MazeView x:Name="MazePage" />
+          <views:QueueView x:Name="QueuePage" IsVisible="False" />
+          <views:ExpressionTreeView x:Name="TreePage" IsVisible="False" />
+        </Grid>
+      </Border>
+    </Grid>
   </Grid>
 </Window>
