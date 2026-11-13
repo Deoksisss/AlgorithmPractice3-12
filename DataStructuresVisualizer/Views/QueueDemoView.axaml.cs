@@ -278,16 +278,15 @@ public partial class QueueDemoView : UserControl
             FontSize = 12
         };
 
-        canvas.Children.Add(border);
-        cardList.Add(border);
-
-        var index = cardList.Count - 1;
+        var index = cardList.Count;
         var targetX = CardLeft + index * (CardWidth + CardGap);
         var startX = targetX + 160;
 
+        canvas.Width = Math.Max(canvas.Width, startX + CardWidth + 24);
         Canvas.SetLeft(border, startX);
         Canvas.SetTop(border, CardTop);
-        canvas.Width = Math.Max(canvas.Width, startX + CardWidth + 24);
+        canvas.Children.Add(border);
+        cardList.Add(border);
     }
 
     private static void RemoveFirstCard(Canvas canvas, List<Border> cardList)
