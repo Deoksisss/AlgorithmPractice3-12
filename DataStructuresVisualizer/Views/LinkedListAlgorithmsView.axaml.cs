@@ -80,7 +80,7 @@ public partial class LinkedListAlgorithmsView : UserControl
 
     private void Execute_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (!ApplyValuesFromInput())
+        if (!ApplyValuesFromInput(onlyIfChanged: true))
         {
             return;
         }
@@ -250,7 +250,7 @@ public partial class LinkedListAlgorithmsView : UserControl
         StatusText.Text = "Список восстановлен из поля ввода.";
     }
 
-    private bool ApplyValuesFromInput()
+    private bool ApplyValuesFromInput(bool onlyIfChanged = false)
     {
         var parts = (ValuesBox.Text ?? string.Empty)
             .Split([' ', ',', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
@@ -266,6 +266,11 @@ public partial class LinkedListAlgorithmsView : UserControl
             }
 
             values.Add(value);
+        }
+
+        if (onlyIfChanged && nodes.Select(node => node.Value).SequenceEqual(values))
+        {
+            return true;
         }
 
         nodes.Clear();
