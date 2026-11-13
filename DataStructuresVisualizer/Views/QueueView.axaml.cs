@@ -198,7 +198,7 @@ public partial class QueueView : UserControl
             FontSize = 10
         };
 
-        Canvas.SetLeft(border, Math.Max(0, canvas.Width - 92));
+        Canvas.SetLeft(border, QueueStartX + waiting.Count * SlotWidth);
         Canvas.SetTop(border, QueueY);
         canvas.Children.Add(border);
 

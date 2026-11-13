@@ -278,9 +278,11 @@ public partial class QueueDemoView : UserControl
         };
 
         canvas.Children.Add(border);
-        Canvas.SetLeft(border, Math.Max(0, canvas.Width - 96));
-        Canvas.SetTop(border, CardTop);
         cardList.Add(border);
+
+        var index = cardList.Count - 1;
+        Canvas.SetLeft(border, CardLeft + index * (CardWidth + CardGap));
+        Canvas.SetTop(border, CardTop);
     }
 
     private static void RemoveFirstCard(Canvas canvas, List<Border> cardList)
