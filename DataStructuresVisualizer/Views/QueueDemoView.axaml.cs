@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using DataStructuresVisualizer.Services;
 
 namespace DataStructuresVisualizer.Views;
 
@@ -23,10 +24,13 @@ public partial class QueueDemoView : UserControl
 
     private DispatcherTimer? sequenceTimer;
     private int operationIndex;
+    private IReadOnlyList<ImportedOperationFile> queueFiles = [];
+    private ImportedOperationFile? selectedQueueFile;
 
     public QueueDemoView()
     {
         InitializeComponent();
+        Loaded += (_, _) => LoadQueueFiles();
     }
 
     private void InitializeComponent()
@@ -44,6 +48,8 @@ public partial class QueueDemoView : UserControl
     private TextBlock LinkedTimeLabel => Require<TextBlock>("LinkedTimeText");
     private TextBlock StandardTimeLabel => Require<TextBlock>("StandardTimeText");
     private ListBox LogBox => Require<ListBox>("QueueLogList");
+    private ComboBox QueueFileSelector => Require<ComboBox>("QueueFileCombo");
+    private ComboBox QueueSetSelector => Require<ComboBox>("QueueSetCombo");
 
     private void Enqueue_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
@@ -135,6 +141,80 @@ public partial class QueueDemoView : UserControl
         UpdateState();
         StatusText.Text = "Обе очереди очищены.";
     }
+
+    private void QueueFile_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var index = QueueFileSelector.SelectedIndex;
+
+        if (index < 0 || index >= queueFiles.Count)
+        {
+            return;
+        }
+
+        selectedQueueFile = queueFiles[index];
+
+        if (selectedQueueFile.Error is not null)
+        {
+            QueueSetSelector.ItemsSource = new[] { "Файл содержит ошибку" };
+            QueueSetSelector.SelectedIndex = 0;
+            StatusText.Text = $"Ошибка файла: {selectedQueueFile.Error}";
+            return;
+        }
+
+        QueueSetSelector.ItemsSource = selectedQueueFile.Sets
+            .Select(set => $"Набор {set.Number} · {set.Operations.Count} операций")
+            .ToArray();
+        QueueSetSelector.SelectedIndex = 0;
+    }
+
+    private void ImportQueueFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (selectedQueueFile is null)
+        {
+            StatusText.Text = "Сначала выберите файл.";
+            return;
+        }
+
+        if (selectedQueueFile.Error is not null)
+        {
+            StatusText.Text = $"Файл не может быть импортирован: {selectedQueueFile.Error}";
+            return;
+        }
+
+        var setIndex = QueueSetSelector.SelectedIndex;
+
+        if (setIndex < 0 || setIndex >= selectedQueueFile.Sets.Count)
+        {
+            StatusText.Text = "Выберите набор.";
+            return;
+        }
+
+        var set = selectedQueueFile.Sets[setIndex];
+        SequenceBox.Text = string.Join(" ", set.Operations.Select(ToToken));
+        StatusText.Text = $"Импортирован {selectedQueueFile.Name}, набор {set.Number}.";
+        StartSequence();
+    }
+
+    private void LoadQueueFiles()
+    {
+        queueFiles = OperationFileService.LoadFiles("QueueInput");
+
+        if (queueFiles.Count == 0)
+        {
+            QueueFileSelector.ItemsSource = new[] { "Файлы не найдены" };
+            QueueFileSelector.SelectedIndex = 0;
+            QueueSetSelector.ItemsSource = Array.Empty<string>();
+            return;
+        }
+
+        QueueFileSelector.ItemsSource = queueFiles
+            .Select(file => file.Error is null ? file.Name : $"{file.Name} ⚠")
+            .ToArray();
+        QueueFileSelector.SelectedIndex = 0;
+    }
+
+    private static string ToToken(ImportedOperation operation) =>
+        operation.Code == 1 ? $"1,{operation.Value}" : operation.Code.ToString();
 
     private void Enqueue(string value)
     {

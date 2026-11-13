@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using DataStructuresVisualizer.Services;
 
 namespace DataStructuresVisualizer.Views;
 
@@ -21,12 +22,15 @@ public partial class StackDemoView : UserControl
     private DispatcherTimer? sequenceTimer;
     private int operationIndex;
     private double canvasHeight = 480;
+    private IReadOnlyList<ImportedOperationFile> stackFiles = [];
+    private ImportedOperationFile? selectedStackFile;
 
     public StackDemoView()
     {
         InitializeComponent();
         Loaded += (_, _) =>
         {
+            LoadStackFiles();
             LayoutCards();
             UpdateState();
         };
@@ -44,6 +48,8 @@ public partial class StackDemoView : UserControl
     private TextBlock CountText => Require<TextBlock>("StackCountText");
     private TextBlock TopText => Require<TextBlock>("StackTopText");
     private ListBox LogBox => Require<ListBox>("StackLogList");
+    private ComboBox StackFileSelector => Require<ComboBox>("StackFileCombo");
+    private ComboBox StackSetSelector => Require<ComboBox>("StackSetCombo");
 
     private void Push_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
@@ -134,9 +140,82 @@ public partial class StackDemoView : UserControl
         StatusText.Text = "Стек очищен.";
     }
 
-    private void StartSequence()
+    private void StackFile_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        StopSequence();
+        var index = StackFileSelector.SelectedIndex;
+
+        if (index < 0 || index >= stackFiles.Count)
+        {
+            return;
+        }
+
+        selectedStackFile = stackFiles[index];
+
+        if (selectedStackFile.Error is not null)
+        {
+            StackSetSelector.ItemsSource = new[] { "Файл содержит ошибку" };
+            StackSetSelector.SelectedIndex = 0;
+            StatusText.Text = $"Ошибка файла: {selectedStackFile.Error}";
+            return;
+        }
+
+        StackSetSelector.ItemsSource = selectedStackFile.Sets
+            .Select(set => $"Набор {set.Number} · {set.Operations.Count} операций")
+            .ToArray();
+        StackSetSelector.SelectedIndex = 0;
+    }
+
+    private void ImportStackFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (selectedStackFile is null)
+        {
+            StatusText.Text = "Сначала выберите файл.";
+            return;
+        }
+
+        if (selectedStackFile.Error is not null)
+        {
+            StatusText.Text = $"Файл не может быть импортирован: {selectedStackFile.Error}";
+            return;
+        }
+
+        var setIndex = StackSetSelector.SelectedIndex;
+
+        if (setIndex < 0 || setIndex >= selectedStackFile.Sets.Count)
+        {
+            StatusText.Text = "Выберите набор.";
+            return;
+        }
+
+        var set = selectedStackFile.Sets[setIndex];
+        SequenceBox.Text = string.Join(" ", set.Operations.Select(ToToken));
+        StatusText.Text = $"Импортирован {selectedStackFile.Name}, набор {set.Number}.";
+        StartSequence();
+    }
+
+    private void LoadStackFiles()
+    {
+        stackFiles = OperationFileService.LoadFiles("StackInput");
+
+        if (stackFiles.Count == 0)
+        {
+            StackFileSelector.ItemsSource = new[] { "Файлы не найдены" };
+            StackFileSelector.SelectedIndex = 0;
+            StackSetSelector.ItemsSource = Array.Empty<string>();
+            return;
+        }
+
+        StackFileSelector.ItemsSource = stackFiles
+            .Select(file => file.Error is null ? file.Name : $"{file.Name} ⚠")
+            .ToArray();
+        StackFileSelector.SelectedIndex = 0;
+    }
+
+    private static string ToToken(ImportedOperation operation) =>
+        operation.Code == 1 ? $"1,{operation.Value}" : operation.Code.ToString();
+
+    private void StartSequence()
+    {        StopSequence();
         pendingOperations.Clear();
         operationIndex = 0;
 

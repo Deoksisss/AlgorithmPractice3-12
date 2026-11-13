@@ -62,6 +62,17 @@
         <Button Content="Стоп" Click="StopSequence_Click" />
       </StackPanel>
       <Button Content="Сбросить очереди" HorizontalAlignment="Stretch" Click="Reset_Click" />
+
+      <TextBlock Classes="panelLabel" Text="Импорт из QueueInput" />
+      <ComboBox x:Name="QueueFileCombo"
+                HorizontalAlignment="Stretch"
+                SelectionChanged="QueueFile_SelectionChanged" />
+      <ComboBox x:Name="QueueSetCombo"
+                HorizontalAlignment="Stretch" />
+      <Button Content="Импортировать набор"
+              HorizontalAlignment="Stretch"
+              Click="ImportQueueFile_Click" />
+
       <Border Background="#15263D" CornerRadius="10" Padding="10">
         <TextBlock x:Name="QueueStatus" TextWrapping="Wrap" Text="Очереди пусты." />
       </Border>

@@ -11,8 +11,6 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="Transitions">
         <Transitions>
-          <DoubleTransition Property="Canvas.Left" Duration="0:0:0.55" />
-          <DoubleTransition Property="Canvas.Top" Duration="0:0:0.4" />
           <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
           <BrushTransition Property="Background" Duration="0:0:0.25" />
         </Transitions>

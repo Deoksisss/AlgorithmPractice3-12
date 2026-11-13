@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
@@ -22,6 +23,7 @@ public partial class LinkedListAlgorithmsView : UserControl
 
     private readonly List<VisualNode> nodes = [];
     private readonly List<string> log = [];
+    private DispatcherTimer? positionTimer;
     private int nextId;
 
     public LinkedListAlgorithmsView()
@@ -268,6 +270,8 @@ public partial class LinkedListAlgorithmsView : UserControl
 
         nodes.Clear();
         Surface.Children.Clear();
+        positionTimer?.Stop();
+        positionTimer = null;
         nextId = 0;
 
         foreach (var value in values)
@@ -339,12 +343,76 @@ public partial class LinkedListAlgorithmsView : UserControl
         Surface.Width = Math.Max(900, 30 + nodes.Count * (NodeWidth + NodeGap) + 30);
         Surface.Height = 150;
 
+        var targets = new List<(VisualNode Node, double X, double Y)>(nodes.Count);
+
         for (var i = 0; i < nodes.Count; i++)
         {
-            Canvas.SetLeft(nodes[i].View, 30 + i * (NodeWidth + NodeGap));
-            Canvas.SetTop(nodes[i].View, NodeTop);
-            nodes[i].View.Opacity = 1;
+            targets.Add((
+                nodes[i],
+                30 + i * (NodeWidth + NodeGap),
+                NodeTop));
         }
+
+        AnimatePositions(targets);
+    }
+
+    private void AnimatePositions(
+        IReadOnlyList<(VisualNode Node, double X, double Y)> targets)
+    {
+        positionTimer?.Stop();
+
+        if (targets.Count == 0)
+        {
+            return;
+        }
+
+        var starts = new List<(double X, double Y, double Opacity)>(targets.Count);
+
+        foreach (var target in targets)
+        {
+            starts.Add((
+                Canvas.GetLeft(target.Node.View),
+                Canvas.GetTop(target.Node.View),
+                target.Node.View.Opacity));
+        }
+
+        var stopwatch = Stopwatch.StartNew();
+        var timer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+
+        positionTimer = timer;
+        timer.Tick += (_, _) =>
+        {
+            var progress = Math.Clamp(stopwatch.Elapsed.TotalMilliseconds / 420.0, 0, 1);
+            var eased = 1 - Math.Pow(1 - progress, 3);
+
+            for (var i = 0; i < targets.Count; i++)
+            {
+                var target = targets[i];
+                var start = starts[i];
+
+                Canvas.SetLeft(target.Node.View, start.X + (target.X - start.X) * eased);
+                Canvas.SetTop(target.Node.View, start.Y + (target.Y - start.Y) * eased);
+                target.Node.View.Opacity = start.Opacity + (1 - start.Opacity) * eased;
+            }
+
+            if (progress >= 1)
+            {
+                timer.Stop();
+                positionTimer = null;
+
+                for (var i = 0; i < targets.Count; i++)
+                {
+                    Canvas.SetLeft(targets[i].Node.View, targets[i].X);
+                    Canvas.SetTop(targets[i].Node.View, targets[i].Y);
+                    targets[i].Node.View.Opacity = 1;
+                }
+            }
+        };
+
+        timer.Start();
     }
 
     private void MarkAllChanged()

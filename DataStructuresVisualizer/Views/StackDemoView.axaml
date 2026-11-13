@@ -63,6 +63,17 @@
         <Button Content="Стоп" Click="StopSequence_Click" />
       </StackPanel>
       <Button Content="Сбросить стек" HorizontalAlignment="Stretch" Click="Reset_Click" />
+
+      <TextBlock Classes="panelLabel" Text="Импорт из StackInput" />
+      <ComboBox x:Name="StackFileCombo"
+                HorizontalAlignment="Stretch"
+                SelectionChanged="StackFile_SelectionChanged" />
+      <ComboBox x:Name="StackSetCombo"
+                HorizontalAlignment="Stretch" />
+      <Button Content="Импортировать набор"
+              HorizontalAlignment="Stretch"
+              Click="ImportStackFile_Click" />
+
       <Border Background="#15263D" CornerRadius="10" Padding="10">
         <TextBlock x:Name="StackStatus" TextWrapping="Wrap" Text="Стек пуст." />
       </Border>
