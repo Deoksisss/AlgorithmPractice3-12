@@ -1,3 +1,4 @@
+using DataStructuresVisualizer.Controls;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Avalonia.Controls;
@@ -11,9 +12,9 @@ namespace DataStructuresVisualizer.Views;
 public partial class QueueDemoView : UserControl
 {
     private const double CardWidth = 92;
-    private const double CardGap = 10;
+    private const double CardGap = 30;
     private const double CardLeft = 20;
-    private const double CardTop = 20;
+    private const double CardTop = 44;
 
     private readonly LinkedList<string> linkedQueue = new();
     private readonly Queue<string> standardQueue = new();
@@ -24,12 +25,17 @@ public partial class QueueDemoView : UserControl
 
     private DispatcherTimer? sequenceTimer;
     private int operationIndex;
+    private readonly SceneMotion linkedMotion = new();
+    private readonly SceneMotion standardMotion = new();
+    private readonly LinkLayer links = new() { NodeWidth = CardWidth, NodeHeight = 52 };
     private IReadOnlyList<ImportedOperationFile> queueFiles = [];
     private ImportedOperationFile? selectedQueueFile;
 
     public QueueDemoView()
     {
         InitializeComponent();
+        ResponsiveColumns.Attach(this);
+        DetachedFromVisualTree += (_, _) => StopSequence();
         Loaded += (_, _) => LoadQueueFiles();
     }
 
@@ -53,11 +59,13 @@ public partial class QueueDemoView : UserControl
 
     private void Enqueue_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        StopSequence();
         Enqueue(ValueBox.Text ?? "клиент");
     }
 
     private void Dequeue_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        StopSequence();
         Dequeue();
     }
 
@@ -138,6 +146,8 @@ public partial class QueueDemoView : UserControl
         StandardCanvas.Children.Clear();
         log.Clear();
         LogBox.ItemsSource = null;
+        LayoutLane(LinkedCanvas, linkedCards);
+        LayoutLane(StandardCanvas, standardCards);
         UpdateState();
         StatusText.Text = "Обе очереди очищены.";
     }
@@ -218,6 +228,8 @@ public partial class QueueDemoView : UserControl
 
     private void Enqueue(string value)
     {
+        linkedMotion.Complete();
+        standardMotion.Complete();
         var linkedWatch = Stopwatch.StartNew();
         linkedQueue.AddLast(value);
         linkedWatch.Stop();
@@ -228,8 +240,8 @@ public partial class QueueDemoView : UserControl
 
         AddCard(LinkedCanvas, linkedCards, value);
         AddCard(StandardCanvas, standardCards, value);
-        ScheduleLayout(LinkedCanvas, linkedCards);
-        ScheduleLayout(StandardCanvas, standardCards);
+        LayoutLane(LinkedCanvas, linkedCards);
+        LayoutLane(StandardCanvas, standardCards);
 
         LinkedTimeLabel.Text = $"Enqueue: {linkedWatch.Elapsed.TotalMilliseconds:0.######} мс";
         StandardTimeLabel.Text = $"Enqueue: {standardWatch.Elapsed.TotalMilliseconds:0.######} мс";
@@ -257,8 +269,6 @@ public partial class QueueDemoView : UserControl
 
         RemoveFirstCard(LinkedCanvas, linkedCards);
         RemoveFirstCard(StandardCanvas, standardCards);
-        LayoutLane(LinkedCanvas, linkedCards);
-        LayoutLane(StandardCanvas, standardCards);
         LinkedTimeLabel.Text = $"Dequeue: {linkedWatch.Elapsed.TotalMilliseconds:0.######} мс";
         StandardTimeLabel.Text = $"Dequeue: {standardWatch.Elapsed.TotalMilliseconds:0.######} мс";
         AppendLog($"Dequeue → связанная: {linkedValue}; Queue<T>: {standardValue}");
@@ -272,85 +282,72 @@ public partial class QueueDemoView : UserControl
         border.Child = new TextBlock
         {
             Text = value,
+            MaxWidth = 80,
+            TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
             FontSize = 12
         };
 
+        ToolTip.SetTip(border, value);
         var index = cardList.Count;
         var targetX = CardLeft + index * (CardWidth + CardGap);
-        var startX = targetX + 160;
+        var startX = targetX;
 
         canvas.Width = Math.Max(canvas.Width, startX + CardWidth + 24);
         Canvas.SetLeft(border, startX);
-        Canvas.SetTop(border, CardTop);
+        Canvas.SetTop(border, CardTop + 80);
+        border.Opacity = 0;
         canvas.Children.Add(border);
         cardList.Add(border);
     }
 
-    private static void RemoveFirstCard(Canvas canvas, List<Border> cardList)
-    {
-        if (cardList.Count == 0)
-        {
-            return;
-        }
+    private SceneMotion Motion(Canvas canvas) => canvas == LinkedCanvas ? linkedMotion : standardMotion;
 
+    private void RemoveFirstCard(Canvas canvas, List<Border> cardList)
+    {
+        var motion = Motion(canvas);
+        motion.Complete();
         var border = cardList[0];
         cardList.RemoveAt(0);
-        border.Opacity = 0;
-
-        var timer = new DispatcherTimer
+        if (canvas == LinkedCanvas) { links.Nodes = cardList; links.InvalidateVisual(); }
+        motion.Animate([new(border, CardLeft, CardTop + 80, 0)], completed: () =>
         {
-            Interval = TimeSpan.FromMilliseconds(250)
-        };
-
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-
-            if (canvas.Children.Contains(border))
-            {
-                canvas.Children.Remove(border);
-            }
-        };
-
-        timer.Start();
+            canvas.Children.Remove(border);
+            LayoutLane(canvas, cardList);
+        }, milliseconds: 160);
     }
 
-    private static void LayoutLane(Canvas canvas, List<Border> cardList)
+    private void LayoutLane(Canvas canvas, List<Border> cardList)
     {
-        var required = CardLeft + cardList.Count * (CardWidth + CardGap) + CardLeft;
-        canvas.Width = Math.Max(720, required + 180);
-        canvas.Height = 96;
-
+        canvas.Width = Math.Max(260, CardLeft + cardList.Count * (CardWidth + CardGap) + CardLeft);
+        canvas.Height = 180;
+        foreach (var label in canvas.Children.OfType<TextBlock>().ToArray()) canvas.Children.Remove(label);
+        var targets = new List<SceneMotion.Target>();
         for (var i = 0; i < cardList.Count; i++)
         {
-            Canvas.SetLeft(cardList[i], CardLeft + i * (CardWidth + CardGap));
-            Canvas.SetTop(cardList[i], CardTop);
-            cardList[i].Classes.Remove("headCard");
-
-            if (i == 0)
+            targets.Add(new(cardList[i], CardLeft + i * (CardWidth + CardGap), CardTop));
+            cardList[i].Classes.Set("headCard", i == 0);
+        }
+        if (cardList.Count > 0)
+        {
+            var head = new TextBlock { Text = cardList.Count == 1 ? "HEAD / TAIL" : "HEAD ↓", FontSize = 12 };
+            Canvas.SetLeft(head, CardLeft); Canvas.SetTop(head, 8); canvas.Children.Add(head);
+            if (cardList.Count > 1)
             {
-                cardList[i].Classes.Add("headCard");
+                var tail = new TextBlock { Text = "TAIL ↓", FontSize = 12 };
+                Canvas.SetLeft(tail, CardLeft + (cardList.Count - 1) * (CardWidth + CardGap));
+                Canvas.SetTop(tail, 8); canvas.Children.Add(tail);
             }
         }
-    }
-
-    private static void ScheduleLayout(Canvas canvas, List<Border> cardList)
-    {
-        var timer = new DispatcherTimer
+        if (canvas == LinkedCanvas)
         {
-            Interval = TimeSpan.FromMilliseconds(25)
-        };
-
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-            LayoutLane(canvas, cardList);
-        };
-
-        timer.Start();
+            if (!canvas.Children.Contains(links)) canvas.Children.Insert(0, links);
+            links.Nodes = cardList;
+            links.Width = canvas.Width; links.Height = canvas.Height;
+        }
+        Motion(canvas).Animate(targets, links.InvalidateVisual, milliseconds: 300);
     }
 
     private void UpdateState()
@@ -358,7 +355,7 @@ public partial class QueueDemoView : UserControl
         CountText.Text = $"Элементов: {linkedQueue.Count}";
         HeadText.Text = linkedQueue.Count == 0
             ? "Голова: —"
-            : $"Голова: {linkedQueue.First!.Value}";
+            : $"Голова: {linkedQueue.First!.Value} · Хвост: {linkedQueue.Last!.Value}";
         StatusText.Text = "Операция выполнена.";
     }
 
@@ -405,6 +402,7 @@ public partial class QueueDemoView : UserControl
 
     private void SequenceTick(object? sender, EventArgs e)
     {
+        if (!IsEffectivelyVisible) { StopSequence(); return; }
         if (operationIndex >= pendingOperations.Count)
         {
             StopSequence();
@@ -448,6 +446,8 @@ public partial class QueueDemoView : UserControl
 
     private void StopSequence()
     {
+        linkedMotion.Complete();
+        standardMotion.Complete();
         sequenceTimer?.Stop();
         sequenceTimer = null;
     }

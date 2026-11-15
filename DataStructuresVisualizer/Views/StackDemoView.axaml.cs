@@ -1,3 +1,4 @@
+using DataStructuresVisualizer.Controls;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -21,13 +22,15 @@ public partial class StackDemoView : UserControl
 
     private DispatcherTimer? sequenceTimer;
     private int operationIndex;
-    private double canvasHeight = 480;
+    private readonly SceneMotion motion = new();
     private IReadOnlyList<ImportedOperationFile> stackFiles = [];
     private ImportedOperationFile? selectedStackFile;
 
     public StackDemoView()
     {
         InitializeComponent();
+        ResponsiveColumns.Attach(this);
+        DetachedFromVisualTree += (_, _) => StopSequence();
         Loaded += (_, _) =>
         {
             LoadStackFiles();
@@ -53,11 +56,13 @@ public partial class StackDemoView : UserControl
 
     private void Push_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        StopSequence();
         Push(ValueBox.Text ?? "42");
     }
 
     private void Pop_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        StopSequence();
         Pop();
     }
 
@@ -131,10 +136,12 @@ public partial class StackDemoView : UserControl
     private void Reset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         StopSequence();
+        motion.Complete();
         values.Clear();
         cards.Clear();
         log.Clear();
-        Surface.Children.Clear();
+        foreach (var card in Surface.Children.OfType<Border>().ToArray()) Surface.Children.Remove(card);
+        LayoutCards();
         LogBox.ItemsSource = null;
         UpdateState();
         StatusText.Text = "Стек очищен.";
@@ -256,6 +263,7 @@ public partial class StackDemoView : UserControl
 
     private void SequenceTick(object? sender, EventArgs e)
     {
+        if (!IsEffectivelyVisible) { StopSequence(); return; }
         if (operationIndex >= pendingOperations.Count)
         {
             StopSequence();
@@ -291,23 +299,24 @@ public partial class StackDemoView : UserControl
 
     private void Push(string value)
     {
+        motion.Complete();
         values.Insert(0, value);
 
         var card = CreateCard(value);
         cards.Insert(0, card);
         Surface.Children.Add(card);
-        Canvas.SetLeft(card, CardLeft);
-        Canvas.SetTop(card, -CardHeight - 8);
+        Canvas.SetTop(card, TopStart);
+        Canvas.SetLeft(card, 260);
         card.Opacity = 0;
 
-        LayoutCards();
-        card.Opacity = 1;
+        LayoutCards(incoming: card);
         AppendLog($"Push({value})");
         UpdateState();
     }
 
     private void Pop()
     {
+        motion.Complete();
         if (values.Count == 0)
         {
             AppendLog("Pop → пусто");
@@ -320,9 +329,7 @@ public partial class StackDemoView : UserControl
 
         values.RemoveAt(0);
         cards.RemoveAt(0);
-        card.Opacity = 0;
-        RemoveAfter(card, 260);
-        LayoutCards();
+        LayoutCards(card);
         AppendLog($"Pop → {value}");
         UpdateState();
     }
@@ -334,32 +341,44 @@ public partial class StackDemoView : UserControl
         border.Child = new TextBlock
         {
             Text = value,
+            MaxWidth = 170,
+            TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             FontSize = 15,
             FontWeight = Avalonia.Media.FontWeight.SemiBold
         };
 
+        ToolTip.SetTip(border, value);
         return border;
     }
 
-    private void LayoutCards()
+    private void LayoutCards(Border? removed = null, Border? incoming = null)
     {
-        var viewportHeight = Math.Max(480, Surface.Bounds.Height);
-        canvasHeight = Math.Max(viewportHeight, TopStart + values.Count * (CardHeight + CardGap) + 24);
-        Surface.Height = canvasHeight;
-
+        Surface.Width = 520;
+        var settledHeight = Math.Max(160, TopStart + values.Count * (CardHeight + CardGap) + 24);
+        Surface.Height = removed is null ? settledHeight : Math.Max(Surface.Height, settledHeight);
+        var targets = new List<SceneMotion.Target>();
         for (var i = 0; i < cards.Count; i++)
         {
-            Canvas.SetLeft(cards[i], CardLeft);
-            Canvas.SetTop(cards[i], TopStart + i * (CardHeight + CardGap));
-            cards[i].Classes.Remove("topCard");
-
-            if (i == 0)
-            {
-                cards[i].Classes.Add("topCard");
-            }
+            cards[i].Classes.Set("topCard", i == 0);
+            targets.Add(new(cards[i], CardLeft, TopStart + i * (CardHeight + CardGap)));
         }
+        if (removed is not null)
+        {
+            // Move the outgoing top into a separate column before compacting the stack.
+            motion.Animate([new(removed, 270, TopStart, 0)], completed: () =>
+            {
+                Surface.Children.Remove(removed);
+                motion.Animate(targets, completed: () => Surface.Height = settledHeight, milliseconds: 300);
+            }, milliseconds: 180);
+        }
+        else if (incoming is not null)
+        {
+            motion.Animate(targets.Where(t => t.View != incoming).ToArray(), completed: () =>
+                motion.Animate(targets.Where(t => t.View == incoming).ToArray(), milliseconds: 180), milliseconds: 180);
+        }
+        else motion.Animate(targets, milliseconds: 300);
     }
 
     private void UpdateState()
@@ -381,28 +400,9 @@ public partial class StackDemoView : UserControl
         LogBox.ItemsSource = log.ToArray();
     }
 
-    private void RemoveAfter(Border card, int milliseconds)
-    {
-        var timer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(milliseconds)
-        };
-
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-
-            if (Surface.Children.Contains(card))
-            {
-                Surface.Children.Remove(card);
-            }
-        };
-
-        timer.Start();
-    }
-
     private void StopSequence()
     {
+        motion.Complete();
         sequenceTimer?.Stop();
         sequenceTimer = null;
     }

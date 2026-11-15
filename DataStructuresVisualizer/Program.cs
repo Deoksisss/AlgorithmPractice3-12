@@ -11,8 +11,12 @@ internal static class Program
             .StartWithClassicDesktopLifetime(args);
     }
 
-    public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-            .LogToTrace();
+    public static AppBuilder BuildAvaloniaApp()
+    {
+        var builder = AppBuilder.Configure<App>().UsePlatformDetect().LogToTrace();
+        // Linux desktops need a TrueType fallback with Cyrillic coverage.
+        if (OperatingSystem.IsLinux())
+            builder.With(new Avalonia.Media.FontManagerOptions { DefaultFamilyName = "DejaVu Sans" });
+        return builder;
+    }
 }

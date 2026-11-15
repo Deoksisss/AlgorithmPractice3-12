@@ -4,6 +4,8 @@ namespace DataStructuresVisualizer.Services;
 /// Собственная LRU-хеш-таблица для кэширования уже вычисленных выражений.
 /// Хеш-таблица решает поиск, а двусвязный список — порядок использования.
 /// </summary>
+public sealed record CacheSnapshot(IReadOnlyList<KeyValuePair<string, double>> Entries, int Hits, int Misses, int Replacements);
+
 public sealed class LruExpressionCache
 {
     private sealed class Entry
@@ -99,6 +101,29 @@ public sealed class LruExpressionCache
 
     public string Describe() =>
         $"LRU: {Count}/{Capacity} · попаданий {Hits} · промахов {Misses} · вытеснений {Replacements}";
+
+    public CacheSnapshot Capture()
+    {
+        var entries = new List<KeyValuePair<string, double>>();
+        for (var entry = _newest; entry is not null; entry = entry.LessRecent)
+            entries.Add(new(entry.Key, entry.Value));
+        return new(entries, Hits, Misses, Replacements);
+    }
+
+    public void Restore(CacheSnapshot snapshot)
+    {
+        Clear();
+        foreach (var entry in snapshot.Entries.Reverse()) Put(entry.Key, entry.Value);
+        Hits = snapshot.Hits; Misses = snapshot.Misses; Replacements = snapshot.Replacements;
+    }
+
+    public IReadOnlyList<string> Snapshot()
+    {
+        var entries = new List<string>();
+        for (var entry = _newest; entry is not null; entry = entry.LessRecent)
+            entries.Add($"{entry.Key} = {entry.Value.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)}");
+        return entries;
+    }
 
     private Entry? Find(string key)
     {

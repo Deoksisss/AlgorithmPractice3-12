@@ -27,6 +27,9 @@
     <Style Selector="ListBox.sidebar ListBoxItem:selected">
       <Setter Property="Background" Value="#1A3A50" />
     </Style>
+    <Style Selector="ListBox.sidebar TextBlock">
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
     <Style Selector="TextBlock.sidebarSection">
       <Setter Property="Foreground" Value="{StaticResource Muted}" />
       <Setter Property="FontSize" Value="11" />
@@ -44,7 +47,7 @@
                  Foreground="{StaticResource Muted}" />
     </StackPanel>
 
-    <Grid Grid.Row="1" ColumnDefinitions="286,*">
+    <Grid Grid.Row="1" ColumnDefinitions="230,*">
       <Border Grid.Column="0"
               Background="{StaticResource PanelBackground}"
               CornerRadius="18"

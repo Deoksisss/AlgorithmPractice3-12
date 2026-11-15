@@ -233,13 +233,12 @@ public static class MazeSolver
 
             if (candidates.Count == 0)
             {
+                stack.RemoveAt(stack.Count - 1);
                 frames.Add(new MazeFrame(
                     MazeFrameType.PopCurrent,
                     current,
                     Clone(),
                     "Тупик: возвращаемся назад через Pop."));
-
-                stack.RemoveAt(stack.Count - 1);
 
                 frames.Add(new MazeFrame(
                     MazeFrameType.DeadEnd,
