@@ -1,4 +1,5 @@
 <UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:scene="using:DataStructuresVisualizer.Controls"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DataStructuresVisualizer.Views.InfixPostfixView">
   <UserControl.Styles>
@@ -25,6 +26,7 @@
       <Setter Property="BorderBrush" Value="#71DEC1" />
     </Style>
     <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Foreground" Value="{StaticResource Accent}" />
       <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -45,17 +47,17 @@
 
       <TextBlock Classes="panelLabel" Text="Инфиксное выражение" />
       <TextBox x:Name="InfixExpressionInput"
-               FontFamily="Consolas"
+               FontFamily="Consolas,DejaVu Sans Mono"
                Text="(2 + 3) * (5 - 1)" />
-      <StackPanel Orientation="Horizontal" Spacing="8">
+      <WrapPanel>
         <Button Content="Случайное" Click="RandomExpression_Click" />
         <Button Content="Построить" Click="Build_Click" />
-      </StackPanel>
-      <StackPanel Orientation="Horizontal" Spacing="8">
+      </WrapPanel>
+      <WrapPanel>
         <Button Content="Запустить анимацию" Click="Start_Click" />
         <Button Content="Стоп" Click="Stop_Click" />
         <Button Content="Сброс" Click="Reset_Click" />
-      </StackPanel>
+      </WrapPanel>
       <TextBlock Classes="panelLabel" Text="Скорость шага" />
       <Slider x:Name="ConversionSpeedSlider" Minimum="100" Maximum="1200" Value="500" />
       <Border Background="#15263D" CornerRadius="10" Padding="10">
@@ -64,7 +66,7 @@
       <Border Background="#15263D" CornerRadius="10" Padding="10">
         <StackPanel Spacing="5">
           <TextBlock Classes="panelLabel" Text="Итоговая постфиксная запись" />
-          <TextBlock x:Name="FinalPostfixText" Text="—" FontFamily="Consolas" TextWrapping="Wrap" />
+          <TextBlock x:Name="FinalPostfixText" Text="—" FontFamily="Consolas,DejaVu Sans Mono" TextWrapping="Wrap" />
           <TextBlock Classes="panelLabel" Text="Значение" />
           <TextBlock x:Name="FinalValueText" Text="—" FontSize="22" FontWeight="SemiBold" />
         </StackPanel>
@@ -72,39 +74,17 @@
       </StackPanel>
     </ScrollViewer>
 
-    <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto,Auto">
-      <Border Grid.Row="0" Background="#0C1A2B" CornerRadius="16" Padding="12">
-        <StackPanel Spacing="6">
-          <TextBlock Classes="sectionTitle" Text="Входные токены" />
-          <WrapPanel x:Name="InfixTokensPanel" />
-        </StackPanel>
-      </Border>
-
-      <Border Grid.Row="1" Background="#0C1A2B" CornerRadius="16" Padding="12">
-        <Grid RowDefinitions="Auto,*">
-          <TextBlock Grid.Row="0" Classes="sectionTitle" Text="Стек операторов" />
-          <ScrollViewer Grid.Row="1">
-            <StackPanel x:Name="OperatorStackPanel" Spacing="6" />
-          </ScrollViewer>
-        </Grid>
-      </Border>
-
-      <Border Grid.Row="2" Background="#0C1A2B" CornerRadius="16" Padding="12">
-        <StackPanel Spacing="6">
-          <TextBlock Classes="sectionTitle" Text="Выходная постфиксная запись" />
-          <WrapPanel x:Name="PostfixOutputPanel" />
-        </StackPanel>
-      </Border>
-
-      <Border Grid.Row="3" Background="#15263D" CornerRadius="12" Padding="12">
-        <TextBlock x:Name="StepExplanationText"
-                   TextWrapping="Wrap"
-                   Foreground="{StaticResource Muted}"
-                   Text="Шаги появятся после запуска." />
+    <Grid Grid.Column="1" RowDefinitions="*,Auto">
+      <scene:SceneViewport><scene:SceneViewport.Scene>
+        <Canvas x:Name="TokenCanvas" Width="660" Height="400" />
+      </scene:SceneViewport.Scene></scene:SceneViewport>
+      <Border Grid.Row="1" Background="#15263D" CornerRadius="12" Padding="12">
+        <TextBlock x:Name="StepExplanationText" TextWrapping="Wrap" Text="Шаги появятся после запуска." />
       </Border>
     </Grid>
 
-    <Border Grid.Column="2" Background="#15263D" CornerRadius="14" Padding="14" Margin="12,0,0,0">
+    <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Disabled">
+    <Border  Background="#15263D" CornerRadius="14" Padding="14" Margin="12,0,0,0">
       <StackPanel Spacing="10">
         <TextBlock Classes="sectionTitle" Text="Как читать анимацию" />
         <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}"
@@ -116,5 +96,6 @@
         </Border>
       </StackPanel>
     </Border>
+    </ScrollViewer>
   </Grid>
 </UserControl>

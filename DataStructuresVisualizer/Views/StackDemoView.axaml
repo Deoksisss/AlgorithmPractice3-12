@@ -1,4 +1,5 @@
 <UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:scene="using:DataStructuresVisualizer.Controls"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DataStructuresVisualizer.Views.StackDemoView">
   <UserControl.Styles>
@@ -12,8 +13,6 @@
       <Setter Property="BoxShadow" Value="0 4 12 0 #33000000" />
       <Setter Property="Transitions">
         <Transitions>
-          <DoubleTransition Property="Canvas.Top" Duration="0:0:0.32" />
-          <DoubleTransition Property="Opacity" Duration="0:0:0.22" />
           <BrushTransition Property="Background" Duration="0:0:0.2" />
         </Transitions>
       </Setter>
@@ -27,6 +26,7 @@
       <Setter Property="FontSize" Value="11" />
     </Style>
     <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Foreground" Value="{StaticResource Accent}" />
       <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -56,12 +56,12 @@
       <TextBox x:Name="StackSequenceInput"
                Height="105"
                AcceptsReturn="True"
-               FontFamily="Consolas"
+               FontFamily="Consolas,DejaVu Sans Mono"
                Text="1,56 1,7 1,cat 2 5 4" />
-      <StackPanel Orientation="Horizontal" Spacing="8">
+      <WrapPanel>
         <Button Content="Выполнить набор" Click="RunSequence_Click" />
         <Button Content="Стоп" Click="StopSequence_Click" />
-      </StackPanel>
+      </WrapPanel>
       <Button Content="Сбросить стек" HorizontalAlignment="Stretch" Click="Reset_Click" />
 
       <TextBlock Classes="panelLabel" Text="Импорт из StackInput" />
@@ -81,11 +81,8 @@
     </ScrollViewer>
 
     <Border Grid.Column="1" Background="#0C1A2B" CornerRadius="16" Padding="10">
-      <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                    VerticalScrollBarVisibility="Auto"
-                    ClipToBounds="True">
-        <Canvas x:Name="StackCanvas"
-                Width="290"
+      <scene:SceneViewport ><scene:SceneViewport.Scene>
+<Canvas x:Name="StackCanvas" Width="520"
                 Height="480"
                 ClipToBounds="True">
           <TextBlock Text="ВЕРШИНА"
@@ -94,10 +91,11 @@
                      Foreground="{StaticResource Muted}"
                      FontSize="10" />
         </Canvas>
-      </ScrollViewer>
+</scene:SceneViewport.Scene></scene:SceneViewport>
     </Border>
 
-    <StackPanel Grid.Column="2" Margin="12,0,0,0" Spacing="10">
+    <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel  Margin="12,0,0,0" Spacing="10">
       <Border Background="#15263D" CornerRadius="12" Padding="12">
         <StackPanel Spacing="4">
           <TextBlock Classes="sectionTitle" Text="Состояние" />
@@ -116,5 +114,6 @@
         </StackPanel>
       </Border>
     </StackPanel>
+    </ScrollViewer>
   </Grid>
 </UserControl>

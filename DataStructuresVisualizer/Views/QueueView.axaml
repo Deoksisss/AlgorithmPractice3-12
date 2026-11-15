@@ -1,4 +1,5 @@
 <UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:scene="using:DataStructuresVisualizer.Controls"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DataStructuresVisualizer.Views.QueueView">
   <UserControl.Styles>
@@ -11,8 +12,6 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="Transitions">
         <Transitions>
-          <DoubleTransition Property="Canvas.Left" Duration="0:0:0.55" />
-          <DoubleTransition Property="Canvas.Top" Duration="0:0:0.45" />
           <DoubleTransition Property="Opacity" Duration="0:0:0.55" />
           <BrushTransition Property="Background" Duration="0:0:0.35" />
           <BrushTransition Property="BorderBrush" Duration="0:0:0.35" />
@@ -60,6 +59,7 @@
   </UserControl.Styles>
 
   <Grid ColumnDefinitions="280,*,250">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
     <StackPanel Margin="0,0,12,0" Spacing="10">
       <TextBlock Text="FIFO: очередь клиентов"
                  Foreground="{StaticResource Accent}"
@@ -90,7 +90,7 @@
       <TextBox x:Name="ClientInput"
                Height="220"
                AcceptsReturn="True"
-               FontFamily="Consolas" />
+               FontFamily="Consolas,DejaVu Sans Mono" />
 
       <TextBlock Foreground="{StaticResource Muted}" Text="Скорость симуляции" />
       <Slider x:Name="SpeedSlider"
@@ -103,6 +103,7 @@
                    Text="Загрузите случайных или ручных клиентов." />
       </Border>
     </StackPanel>
+    </ScrollViewer>
 
     <Border Grid.Column="1" Background="#0C1A2B" CornerRadius="16" Padding="10">
       <Grid RowDefinitions="Auto,*">
@@ -112,12 +113,8 @@
                    FontWeight="SemiBold"
                    Foreground="#DDE9F8"
                    Text="09:00" />
-        <ScrollViewer Grid.Row="1"
-                      x:Name="BankScroller"
-                      ClipToBounds="True"
-                      HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Disabled">
-          <Canvas x:Name="BankCanvas"
+        <scene:SceneViewport Grid.Row="1"><scene:SceneViewport.Scene>
+<Canvas x:Name="BankCanvas"
                   Width="980"
                   Height="470"
                   ClipToBounds="True">
@@ -138,11 +135,12 @@
                        Canvas.Top="330"
                        Foreground="#AABBD2" />
           </Canvas>
-        </ScrollViewer>
+</scene:SceneViewport.Scene></scene:SceneViewport>
       </Grid>
     </Border>
 
-    <StackPanel Grid.Column="2" Margin="12,0,0,0" Spacing="10">
+    <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel  Margin="12,0,0,0" Spacing="10">
       <Border Background="#15263D"
               CornerRadius="12"
               Padding="14">
@@ -196,5 +194,6 @@
         </StackPanel>
       </Border>
     </StackPanel>
+    </ScrollViewer>
   </Grid>
 </UserControl>

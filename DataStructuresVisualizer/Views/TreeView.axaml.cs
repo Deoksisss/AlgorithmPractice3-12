@@ -21,11 +21,13 @@ public partial class ExpressionTreeView : UserControl
     private string postfix = string.Empty;
     private IReadOnlyList<EvaluationStep>? steps;
     private int stepIndex;
+    private string builtExpression = string.Empty;
+    private ListBox CacheList => Require<ListBox>("CacheEntries");
 
     public ExpressionTreeView()
     {
         InitializeComponent();
-        TreeSurface.SizeChanged += (_, _) => RenderTree();
+        DetachedFromVisualTree += (_, _) => StopAnimation();
 
         Loaded += (_, _) => BuildCurrentTree();
     }
@@ -60,7 +62,7 @@ public partial class ExpressionTreeView : UserControl
     {
         StopAnimation();
 
-        if (root is null)
+        if (root is null || builtExpression != InputBox.Text)
         {
             BuildCurrentTree();
         }
@@ -74,11 +76,17 @@ public partial class ExpressionTreeView : UserControl
 
         try
         {
-            var value = ExpressionService.Evaluate(root, evaluationSteps, _lruCache);
+            ClearNodeStates();
+            var initialCache = _lruCache.Describe();
+            var initialEntries = _lruCache.Snapshot();
+            var playbackCache = new LruExpressionCache(_lruCache.Capacity);
+            playbackCache.Restore(_lruCache.Capture());
+            ExpressionService.Evaluate(root, evaluationSteps, playbackCache);
             steps = evaluationSteps;
             stepIndex = 0;
-            ResultLabel.Text = Format(value);
-            LruCacheLabel.Text = _lruCache.Describe();
+            ResultLabel.Text = "—";
+            LruCacheLabel.Text = initialCache;
+            CacheList.ItemsSource = initialEntries;
             timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(650)
@@ -106,12 +114,14 @@ public partial class ExpressionTreeView : UserControl
         ClearNodeStates();
         _lruCache.Clear();
         LruCacheLabel.Text = _lruCache.Describe();
+        CacheList.ItemsSource = null;
         ResultLabel.Text = "—";
         StatusLabel.Text = "Анимация и LRU-кэш сброшены.";
     }
 
     private void Timer_Tick(object? sender, EventArgs e)
     {
+        if (!IsEffectivelyVisible) { StopAnimation(); return; }
         if (steps is null || timer is null)
         {
             return;
@@ -138,6 +148,7 @@ public partial class ExpressionTreeView : UserControl
     {
         try
         {
+            builtExpression = InputBox.Text ?? string.Empty;
             postfix = ExpressionService.ToPostfix(InputBox.Text ?? string.Empty);
             root = ExpressionService.BuildTree(postfix);
             PostfixLabel.Text = postfix;
@@ -150,6 +161,8 @@ public partial class ExpressionTreeView : UserControl
         catch (Exception exception)
         {
             root = null;
+            steps = null;
+            ResultLabel.Text = "—";
             PostfixLabel.Text = "—";
             StatusLabel.Text = exception.Message;
             RenderTree();
@@ -167,13 +180,17 @@ public partial class ExpressionTreeView : UserControl
             return;
         }
 
-        var canvasWidth = Math.Max(450, canvas.Bounds.Width);
         var layoutWidth = ExpressionService.Layout(root);
-        var offsetX = Math.Max(50, (canvasWidth - layoutWidth) / 2);
-        const double offsetY = 80;
+        const double offsetX = 50;
+        const double offsetY = 50;
+        canvas.Width = Math.Max(160, layoutWidth + 100);
+        canvas.Height = Math.Max(140, MaximumY(root) + 100);
 
         DrawTree(root, offsetX, offsetY);
     }
+
+    private static double MaximumY(ExpressionNode node) => Math.Max(node.Y,
+        Math.Max(node.Left is null ? 0 : MaximumY(node.Left), node.Right is null ? 0 : MaximumY(node.Right)));
 
     private void DrawTree(ExpressionNode node, double offsetX, double offsetY)
     {
@@ -202,6 +219,8 @@ public partial class ExpressionTreeView : UserControl
         border.Child = new TextBlock
         {
             Text = node.Value,
+            MaxWidth = NodeWidth - 8,
+            TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             FontWeight = Avalonia.Media.FontWeight.SemiBold
@@ -211,6 +230,7 @@ public partial class ExpressionTreeView : UserControl
         Canvas.SetTop(border, node.Y + offsetY - NodeHeight / 2.0);
         canvas.Children.Add(border);
         visuals[node] = border;
+        ToolTip.SetTip(border, node.Value);
     }
 
     private static Avalonia.Controls.Shapes.Line CreateEdge(
@@ -223,10 +243,10 @@ public partial class ExpressionTreeView : UserControl
         {
             StartPoint = new Avalonia.Point(
                 parent.X + offsetX,
-                parent.Y + offsetY),
+                parent.Y + offsetY + NodeHeight / 2),
             EndPoint = new Avalonia.Point(
                 child.X + offsetX,
-                child.Y + offsetY)
+                child.Y + offsetY - NodeHeight / 2)
         };
 
         line.Classes.Add("edge");
@@ -244,14 +264,16 @@ public partial class ExpressionTreeView : UserControl
 
         for (var i = 0; i < index; i++)
         {
-            visuals[steps[i].Node].Classes.Add("done");
+            if (steps[i].HasValue) visuals[steps[i].Node].Classes.Add(steps[i].FromCache ? "cached" : "done");
         }
 
         var current = steps[index];
         visuals[current.Node].Classes.Add(current.FromCache ? "cached" : "current");
         StatusLabel.Text = current.Description;
-        ResultLabel.Text = Format(current.Value);
-        LruCacheLabel.Text = _lruCache.Describe();
+        ResultLabel.Text = current.HasValue ? Format(current.Value) : "—";
+        LruCacheLabel.Text = current.CacheState;
+        CacheList.ItemsSource = current.CacheEntries;
+        if (current.Cache is not null) _lruCache.Restore(current.Cache);
     }
 
     private void ClearNodeStates()

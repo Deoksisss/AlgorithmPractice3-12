@@ -1,3 +1,4 @@
+using DataStructuresVisualizer.Controls;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -23,14 +24,13 @@ public partial class MazeView : UserControl
     private int frameIndex;
     private MazePoint? currentPoint;
     private HashSet<MazePoint> stackSnapshot = [];
-    private Avalonia.Point? dragStart;
-    private Avalonia.Vector dragOffset;
-    private bool isDraggingMaze;
 
     public MazeView()
     {
         InitializeComponent();
-        MazeViewport.SizeChanged += (_, _) => RenderGrid();
+        ResponsiveColumns.Attach(this);
+        DetachedFromVisualTree += (_, _) => StopAnimation();
+
 
         Loaded += (_, _) =>
         {
@@ -45,7 +45,7 @@ public partial class MazeView : UserControl
     }
 
     private Canvas MazeSurface => Require<Canvas>("MazeCanvas");
-    private ScrollViewer MazeViewport => Require<ScrollViewer>("MazeScroller");
+
     private TextBox MazeTextBox => Require<TextBox>("MazeInput");
     private ListBox StackBox => Require<ListBox>("StackList");
     private TextBlock StatusLabel => Require<TextBlock>("StatusText");
@@ -111,12 +111,16 @@ public partial class MazeView : UserControl
 
     private void GenerateRandom()
     {
+        StopAnimation();
+        frames = null;
+        ResetVisualization();
         grid = MazeGenerator.GenerateRandom();
         MazeTextBox.Text = ToText(grid);
     }
 
     private void Timer_Tick(object? sender, EventArgs e)
     {
+        if (!IsEffectivelyVisible) { StopAnimation(); return; }
         if (frames is null || timer is null || frameIndex >= frames.Count)
         {
             timer?.Stop();
@@ -151,13 +155,12 @@ public partial class MazeView : UserControl
                 break;
 
             case MazeFrameType.PopCurrent:
-                currentPoint = null;
-                stackSnapshot.Remove(frame.Point);
+                currentPoint = frame.Stack.Count > 0 ? frame.Stack[^1] : null;
                 break;
 
             case MazeFrameType.DeadEnd:
                 deadEnds.Add(frame.Point);
-                currentPoint = null;
+                currentPoint = frame.Stack.Count > 0 ? frame.Stack[^1] : null;
                 break;
 
             case MazeFrameType.Found:
@@ -178,45 +181,29 @@ public partial class MazeView : UserControl
 
         StackBox.ItemsSource = frame.Stack
             .Reverse()
-            .Select((point, index) => index == 0 ? $"↑ {point}" : point.ToString())
+            .Select((point, index) => index == 0 ? $"↑ ({point.X}, {point.Y})" : $"({point.X}, {point.Y})")
             .ToList();
     }
 
     private void RenderGrid()
     {
         var canvas = MazeSurface;
-        var viewport = MazeViewport;
+
 
         canvas.Children.Clear();
         visuals.Clear();
 
         if (grid is null)
         {
-            canvas.Width = Math.Max(1, viewport.Bounds.Width - 20);
-            canvas.Height = Math.Max(1, viewport.Bounds.Height - 20);
+            canvas.Width = 320;
+            canvas.Height = 240;
             return;
         }
-
-        var viewportWidth = Math.Max(320, viewport.Bounds.Width - 20);
-        var viewportHeight = Math.Max(240, viewport.Bounds.Height - 20);
-
-        var cellSize = Math.Min(
-            (viewportWidth - 24) / grid.Width,
-            (viewportHeight - 24) / grid.Height);
-
-        cellSize = Math.Clamp(cellSize, 16, 42);
-
-        var contentWidth = 16 + grid.Width * (cellSize + CellGap);
-        var contentHeight = 16 + grid.Height * (cellSize + CellGap);
-
-        var displayWidth = Math.Max(viewportWidth, contentWidth);
-        var displayHeight = Math.Max(viewportHeight, contentHeight);
-
-        canvas.Width = displayWidth;
-        canvas.Height = displayHeight;
-
-        var startX = Math.Max(8, (displayWidth - contentWidth) / 2.0 + 8);
-        var startY = Math.Max(8, (displayHeight - contentHeight) / 2.0 + 8);
+        const double cellSize = 32;
+        canvas.Width = 16 + grid.Width * (cellSize + CellGap);
+        canvas.Height = 16 + grid.Height * (cellSize + CellGap);
+        const double startX = 8;
+        const double startY = 8;
 
         for (var y = 0; y < grid.Height; y++)
         {
@@ -249,56 +236,15 @@ public partial class MazeView : UserControl
                         break;
                 }
 
+                if (cell is 'S' or 'E') border.Child = new TextBlock { Text = cell.ToString(), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                ToolTip.SetTip(border, point.ToString());
                 Canvas.SetLeft(border, startX + x * (cellSize + CellGap));
                 Canvas.SetTop(border, startY + y * (cellSize + CellGap));
                 canvas.Children.Add(border);
                 visuals[point] = border;
             }
         }
-    }
-
-    private void MazeScroller_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
-    {
-        var viewport = MazeViewport;
-        dragStart = e.GetPosition(viewport);
-        dragOffset = viewport.Offset;
-        isDraggingMaze = true;
-        e.Pointer.Capture(viewport);
-    }
-
-    private void MazeScroller_PointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
-    {
-        if (!isDraggingMaze || dragStart is null)
-        {
-            return;
-        }
-
-        var viewport = MazeViewport;
-        var position = e.GetPosition(viewport);
-        var dx = position.X - dragStart.Value.X;
-        var dy = position.Y - dragStart.Value.Y;
-
-        viewport.Offset = new Avalonia.Vector(
-            dragOffset.X - dx,
-            dragOffset.Y - dy);
-    }
-
-    private void MazeScroller_PointerReleased(object? sender, Avalonia.Input.PointerReleasedEventArgs e)
-    {
-        if (!isDraggingMaze)
-        {
-            return;
-        }
-
-        isDraggingMaze = false;
-        dragStart = null;
-        e.Pointer.Capture(null);
-    }
-
-    private void MazeScroller_PointerCaptureLost(object? sender, Avalonia.Input.PointerCaptureLostEventArgs e)
-    {
-        isDraggingMaze = false;
-        dragStart = null;
+        RenderStates();
     }
 
     private void RenderStates()
@@ -324,6 +270,7 @@ public partial class MazeView : UserControl
             if (pathCells.Contains(point))
             {
                 border.Classes.Add("pathCell");
+                continue;
             }
 
             if (currentPoint == point)

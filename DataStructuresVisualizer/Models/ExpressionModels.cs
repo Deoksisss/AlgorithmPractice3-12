@@ -28,4 +28,8 @@ public sealed record EvaluationStep(
     ExpressionNode Node,
     double Value,
     string Description,
-    bool FromCache);
+    bool FromCache,
+    string CacheState = "",
+    IReadOnlyList<string>? CacheEntries = null,
+    DataStructuresVisualizer.Services.CacheSnapshot? Cache = null,
+    bool HasValue = true);

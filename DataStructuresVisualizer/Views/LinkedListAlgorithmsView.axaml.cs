@@ -1,5 +1,5 @@
+using DataStructuresVisualizer.Controls;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
@@ -23,12 +23,16 @@ public partial class LinkedListAlgorithmsView : UserControl
 
     private readonly List<VisualNode> nodes = [];
     private readonly List<string> log = [];
-    private DispatcherTimer? positionTimer;
+    private readonly List<Border> departing = [];
+    private readonly SceneMotion motion = new();
+    private readonly LinkLayer links = new() { NodeWidth = NodeWidth, NodeHeight = NodeHeight };
     private int nextId;
 
     public LinkedListAlgorithmsView()
     {
         InitializeComponent();
+        ResponsiveColumns.Attach(this);
+        DetachedFromVisualTree += (_, _) => motion.Complete();
         Loaded += (_, _) =>
         {
             TaskSelector.SelectedIndex = 0;
@@ -80,6 +84,7 @@ public partial class LinkedListAlgorithmsView : UserControl
 
     private void Execute_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        if (motion.IsRunning) { StatusText.Text = "Дождитесь завершения перемещения."; return; }
         if (!ApplyValuesFromInput(onlyIfChanged: true))
         {
             return;
@@ -93,8 +98,10 @@ public partial class LinkedListAlgorithmsView : UserControl
         switch (task)
         {
             case 0:
+                var beforeReverse = nodes.ToArray();
                 nodes.Reverse();
-                MarkAllChanged();
+                for (var i = 0; i < nodes.Count; i++)
+                    if (nodes[i] != beforeReverse[i]) nodes[i].View.Classes.Add("changed");
                 note = "Ссылки перестроены в обратном порядке.";
                 break;
 
@@ -176,6 +183,11 @@ public partial class LinkedListAlgorithmsView : UserControl
                 break;
 
             case 6:
+                if (!nodes.Select(n => n.Value).SequenceEqual(nodes.Select(n => n.Value).Order()))
+                {
+                    StatusText.Text = "Для этой операции нужен список по возрастанию.";
+                    return;
+                }
                 var insertValue = ReadParameter(Param1Box, "E");
 
                 if (insertValue is null)
@@ -273,10 +285,11 @@ public partial class LinkedListAlgorithmsView : UserControl
             return true;
         }
 
+        motion.Complete();
         nodes.Clear();
+        departing.Clear();
         Surface.Children.Clear();
-        positionTimer?.Stop();
-        positionTimer = null;
+        Surface.Children.Add(links);
         nextId = 0;
 
         foreach (var value in values)
@@ -297,6 +310,8 @@ public partial class LinkedListAlgorithmsView : UserControl
         border.Child = new TextBlock
         {
             Text = value.ToString(),
+            MaxWidth = NodeWidth - 8,
+            TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             FontSize = 14,
@@ -310,11 +325,12 @@ public partial class LinkedListAlgorithmsView : UserControl
             View = border
         };
 
+        Canvas.SetLeft(border, 30 + Surface.Children.OfType<Border>().Count() * (NodeWidth + NodeGap));
         Surface.Children.Add(border);
-        Canvas.SetLeft(border, 900);
-        Canvas.SetTop(border, -80);
+        Canvas.SetTop(border, NodeTop);
         border.Opacity = 0;
 
+        ToolTip.SetTip(border, $"Узел #{node.Id}: {value}");
         return node;
     }
 
@@ -323,109 +339,41 @@ public partial class LinkedListAlgorithmsView : UserControl
     private void RemoveNode(VisualNode node)
     {
         nodes.Remove(node);
-        node.View.Opacity = 0;
-
-        var timer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(320)
-        };
-
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-
-            if (Surface.Children.Contains(node.View))
-            {
-                Surface.Children.Remove(node.View);
-            }
-        };
-
-        timer.Start();
+        departing.Add(node.View);
     }
 
     private void LayoutNodes()
     {
-        Surface.Width = Math.Max(900, 30 + nodes.Count * (NodeWidth + NodeGap) + 30);
-        Surface.Height = 150;
-
-        var targets = new List<(VisualNode Node, double X, double Y)>(nodes.Count);
-
-        for (var i = 0; i < nodes.Count; i++)
+        if (departing.Count > 0)
         {
-            targets.Add((
-                nodes[i],
-                30 + i * (NodeWidth + NodeGap),
-                NodeTop));
-        }
-
-        AnimatePositions(targets);
-    }
-
-    private void AnimatePositions(
-        IReadOnlyList<(VisualNode Node, double X, double Y)> targets)
-    {
-        positionTimer?.Stop();
-
-        if (targets.Count == 0)
-        {
+            var removed = departing.ToArray();
+            departing.Clear();
+            motion.Animate(removed.Select(v => new SceneMotion.Target(v, Canvas.GetLeft(v), NodeTop + NodeHeight + 20, 0)).ToArray(),
+                frame: links.InvalidateVisual, completed: () =>
+                {
+                    foreach (var view in removed) Surface.Children.Remove(view);
+                    LayoutNodes();
+                }, milliseconds: 180);
             return;
         }
-
-        var starts = new List<(double X, double Y, double Opacity)>(targets.Count);
-
-        foreach (var target in targets)
+        Surface.Width = Math.Max(260, 60 + nodes.Count * (NodeWidth + NodeGap));
+        var targets = new List<SceneMotion.Target>();
+        var lane = NodeTop + NodeHeight + 30;
+        for (var i = 0; i < nodes.Count; i++)
         {
-            starts.Add((
-                Canvas.GetLeft(target.Node.View),
-                Canvas.GetTop(target.Node.View),
-                target.Node.View.Opacity));
+            var x = 30 + i * (NodeWidth + NodeGap);
+            var moves = Math.Abs(Canvas.GetLeft(nodes[i].View) - x) > 1;
+            targets.Add(new(nodes[i].View, x, NodeTop, 1, moves ? lane : 0));
+            if (moves) lane += NodeHeight + 30;
         }
-
-        var stopwatch = Stopwatch.StartNew();
-        var timer = new DispatcherTimer
+        Surface.Height = Math.Max(180, lane + NodeHeight + 30);
+        links.Nodes = nodes.Select(n => (Control)n.View).ToArray();
+        links.Width = Surface.Width; links.Height = Surface.Height;
+        motion.Animate(targets, links.InvalidateVisual, () =>
         {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-
-        positionTimer = timer;
-        timer.Tick += (_, _) =>
-        {
-            var progress = Math.Clamp(stopwatch.Elapsed.TotalMilliseconds / 420.0, 0, 1);
-            var eased = 1 - Math.Pow(1 - progress, 3);
-
-            for (var i = 0; i < targets.Count; i++)
-            {
-                var target = targets[i];
-                var start = starts[i];
-
-                Canvas.SetLeft(target.Node.View, start.X + (target.X - start.X) * eased);
-                Canvas.SetTop(target.Node.View, start.Y + (target.Y - start.Y) * eased);
-                target.Node.View.Opacity = start.Opacity + (1 - start.Opacity) * eased;
-            }
-
-            if (progress >= 1)
-            {
-                timer.Stop();
-                positionTimer = null;
-
-                for (var i = 0; i < targets.Count; i++)
-                {
-                    Canvas.SetLeft(targets[i].Node.View, targets[i].X);
-                    Canvas.SetTop(targets[i].Node.View, targets[i].Y);
-                    targets[i].Node.View.Opacity = 1;
-                }
-            }
-        };
-
-        timer.Start();
-    }
-
-    private void MarkAllChanged()
-    {
-        foreach (var node in nodes)
-        {
-            node.View.Classes.Add("changed");
-        }
+            Surface.Height = 180;
+            links.Height = Surface.Height;
+        }, 650);
     }
 
     private void ClearChanged()

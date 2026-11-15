@@ -211,7 +211,7 @@ public static class ExpressionService
         if (!node.IsOperator)
         {
             node.Result = double.Parse(node.Value, CultureInfo.InvariantCulture);
-            steps.Add(new EvaluationStep(node, node.Result, $"Лист: {node.Value} = {Format(node.Result)}", false));
+            steps.Add(new EvaluationStep(node, node.Result, $"Лист: {node.Value} = {Format(node.Result)}", false, cache?.Describe() ?? "", cache?.Snapshot(), cache?.Capture()));
             return node.Result;
         }
 
@@ -222,10 +222,13 @@ public static class ExpressionService
                 node,
                 cachedResult,
                 $"LRU-хит: {node.Key} = {Format(cachedResult)}",
-                true));
+                true, cache.Describe(), cache.Snapshot(), cache.Capture()));
 
             return cachedResult;
         }
+
+        if (cache is not null)
+            steps.Add(new EvaluationStep(node, 0, $"LRU-промах: {node.Key}; вычисляем поддерево", false, cache.Describe(), cache.Snapshot(), cache.Capture(), false));
 
         var left = EvaluateRecursive(node.Left!, steps, cache);
         var right = EvaluateRecursive(node.Right!, steps, cache);
@@ -256,13 +259,12 @@ public static class ExpressionService
         }
 
         node.Result = result;
+        cache?.Put(node.Key, result);
         steps.Add(new EvaluationStep(
             node,
             result,
             $"{node.Left!.Value} {node.Value} {node.Right!.Value} = {Format(result)}",
-            false));
-
-        cache?.Put(node.Key, result);
+            false, cache?.Describe() ?? "", cache?.Snapshot(), cache?.Capture()));
         return result;
     }
 
