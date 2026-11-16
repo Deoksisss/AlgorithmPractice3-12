@@ -315,6 +315,9 @@ dotnet run -- --linked-list-test
 - `Views/QueueView.axaml` — банк/МФЦ и очередь;
 - `Views/TreeView.axaml` — дерево арифметического выражения;
 - `Views/LinkedListAlgorithmsView.axaml` — 8 алгоритмов со связным списком;
+- `Views/BinaryTreeView.axaml` — раздел 5: префиксное бинарное дерево;
+- `Services/BinaryTreeService.cs` — разбор строки, раскладка и статистика;
+- `Models/BinaryTreeModels.cs` — узел бинарного дерева;
 - `Services/MazeService.cs` — генерация, разбор и пошаговый DFS;
 - `Services/BankService.cs` — генерация и разбор клиентов;
 - `Services/InfixConversionService.cs` — кадры алгоритма shunting-yard;

@@ -116,6 +116,18 @@
                            Foreground="{StaticResource Muted}" />
               </StackPanel>
             </ListBoxItem>
+            <ListBoxItem>
+              <StackPanel Spacing="2">
+                <TextBlock Text="Раздел 5. Бинарное дерево"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="Префиксная сборка и NULL-стрелки"
+                           FontSize="11"
+                           Foreground="{StaticResource Muted}"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </ListBoxItem>
           </ListBox>
 
           <Border Grid.Row="2"
@@ -123,7 +135,7 @@
                   CornerRadius="10"
                   Padding="10"
                   Margin="2,10,2,2">
-            <TextBlock Text="5 разделов · визуальные демонстрации"
+            <TextBlock Text="6 разделов · визуальные демонстрации"
                        Foreground="{StaticResource Muted}"
                        FontSize="11"
                        TextWrapping="Wrap" />
@@ -142,6 +154,7 @@
           <views:QueueDemoView x:Name="QueueDemoPage" IsVisible="False" />
           <views:ExamplesView x:Name="ExamplesPage" IsVisible="False" />
           <views:LinkedListAlgorithmsView x:Name="LinkedListPage" IsVisible="False" />
+          <views:BinaryTreeView x:Name="BinaryTreePage" IsVisible="False" />
         </Grid>
       </Border>
     </Grid>

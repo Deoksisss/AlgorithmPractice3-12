@@ -44,8 +44,9 @@ public partial class MainWindow : Window
         var queue = this.FindControl<QueueDemoView>("QueueDemoPage");
         var examples = this.FindControl<ExamplesView>("ExamplesPage");
         var linkedList = this.FindControl<LinkedListAlgorithmsView>("LinkedListPage");
+        var binaryTree = this.FindControl<BinaryTreeView>("BinaryTreePage");
 
-        if (stack is null || infix is null || queue is null || examples is null || linkedList is null)
+        if (stack is null || infix is null || queue is null || examples is null || linkedList is null || binaryTree is null)
         {
             return;
         }
@@ -55,5 +56,6 @@ public partial class MainWindow : Window
         queue.IsVisible = index == 2;
         examples.IsVisible = index == 3;
         linkedList.IsVisible = index == 4;
+        binaryTree.IsVisible = index == 5;
     }
 }

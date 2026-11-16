@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:scene="using:DataStructuresVisualizer.Controls"
+             x:Class="DataStructuresVisualizer.Views.BinaryTreeView">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="Foreground" Value="{StaticResource Accent}" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.panelLabel">
+      <Setter Property="Foreground" Value="{StaticResource Muted}" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="330,*,250">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="0,0,12,0" Spacing="9">
+        <TextBlock Classes="sectionTitle" Text="Раздел 5. Бинарное дерево" />
+        <TextBlock TextWrapping="Wrap"
+                   Foreground="{StaticResource Muted}"
+                   Text="Дерево строится префиксным обходом: буква — узел, звёздочка — отсутствующая связь. Для каждого узла рекурсивно строятся левое и правое поддеревья." />
+
+        <TextBlock Classes="panelLabel" Text="Строка дерева" />
+        <TextBox x:Name="BinaryTreeInput"
+                 AcceptsReturn="True"
+                 Height="90"
+                 FontFamily="Consolas"
+                 Text="ABD*G***CE**FH**J**" />
+        <Button Content="Построить дерево" Click="Build_Click" HorizontalAlignment="Stretch" />
+        <Button Content="Случайное дерево" Click="Random_Click" HorizontalAlignment="Stretch" />
+        <Button Content="Сброс" Click="Reset_Click" HorizontalAlignment="Stretch" />
+
+        <Border Background="#15263D" CornerRadius="10" Padding="10">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="panelLabel" Text="Статистика" />
+            <TextBlock x:Name="NodeCountText" Text="Узлов: 0" />
+            <TextBlock x:Name="HeightText" Text="Высота: 0" />
+            <TextBlock x:Name="NullCountText" Text="NULL-ссылок: 0" />
+          </StackPanel>
+        </Border>
+
+        <Border Background="#15263D" CornerRadius="10" Padding="10">
+          <TextBlock x:Name="BinaryTreeStatus"
+                     TextWrapping="Wrap"
+                     Text="Введите строку и постройте дерево." />
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border Grid.Column="1" Background="#0C1A2B" CornerRadius="16" Padding="10">
+      <scene:SceneViewport>
+        <scene:SceneViewport.Scene>
+          <Canvas x:Name="BinaryTreeCanvas" Width="900" Height="600" />
+        </scene:SceneViewport.Scene>
+      </scene:SceneViewport>
+    </Border>
+
+    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <Border Background="#15263D" CornerRadius="14" Padding="14" Margin="12,0,0,0">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="sectionTitle" Text="Как читать узел" />
+          <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}"
+                     Text="Верхняя половина квадрата содержит букву. Нижняя половина разделена на две ячейки: левая отвечает за левое поддерево, правая — за правое." />
+          <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}"
+                     Text="Если связь есть, из центра нижней ячейки выходит стрелка к верхней середине дочернего квадрата. Если связи нет, в ячейке написано NULL." />
+          <Border Background="#102033" CornerRadius="10" Padding="10">
+            <TextBlock Text="Прокрутка и масштаб доступны через панель над деревом."
+                       Foreground="{StaticResource Muted}"
+                       TextWrapping="Wrap" />
+          </Border>
+        </StackPanel>
+      </Border>
+    </ScrollViewer>
+  </Grid>
+</UserControl>
