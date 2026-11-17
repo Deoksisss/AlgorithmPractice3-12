@@ -263,6 +263,7 @@ public class CustomLinkedList
     // 9. Дописывание списка E в конец L
     public void AppendList(CustomLinkedList other)
     {
+        ArgumentNullException.ThrowIfNull(other);
         if (other._head == null) return;
 
         var cloneOfOther = CloneList(other._head);
@@ -275,31 +276,41 @@ public class CustomLinkedList
             while (current.Next != null) current = current.Next;
             current.Next = cloneOfOther;
         }
+
         Count += other.Count;
     }
-    
-    // 10. Разбиение списка по X
+
+    // 10. Разбиение списка по первому вхождению X
     public (CustomLinkedList left, CustomLinkedList right) SplitByValue(int x)
     {
         var left = new CustomLinkedList();
         var right = new CustomLinkedList();
         var current = _head;
-        bool found = false;
+        var found = false;
 
         while (current != null)
         {
             if (!found)
             {
                 left.Add(current.Value);
-                if (current.Value == x) found = true;
+
+                if (current.Value == x)
+                {
+                    found = true;
+                }
             }
-            else right.Add(current.Value);
+            else
+            {
+                right.Add(current.Value);
+            }
+
             current = current.Next;
         }
+
         return (left, right);
     }
 
-    // 11. Удвоение списка
+    // 11. Удвоение списка: L + L
     public void DoubleList()
     {
         if (_head == null) return;
@@ -312,26 +323,34 @@ public class CustomLinkedList
         current.Next = clone;
         Count *= 2;
     }
-    
-    // 12. Обмен местами двух элементов (по значениям)
+
+    // 12. Обмен местами двух элементов по значениям.
+    // Если значение встречается несколько раз, берётся первое вхождение.
     public void SwapValues(int val1, int val2)
     {
+        if (val1 == val2) return;
+
         Node? node1 = null;
         Node? node2 = null;
         var current = _head;
 
-        while (current != null)
+        while (current != null && (node1 == null || node2 == null))
         {
-            if (current.Value == val1) node1 = current;
-            if (current.Value == val2) node2 = current;
+            if (node1 == null && current.Value == val1)
+            {
+                node1 = current;
+            }
+            else if (node2 == null && current.Value == val2)
+            {
+                node2 = current;
+            }
+
             current = current.Next;
         }
 
         if (node1 != null && node2 != null)
         {
-            int temp = node1.Value;
-            node1.Value = node2.Value;
-            node2.Value = temp;
+            (node1.Value, node2.Value) = (node2.Value, node1.Value);
         }
     }
 

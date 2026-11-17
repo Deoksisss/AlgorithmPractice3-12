@@ -25,6 +25,7 @@ public static class LinkedListSelfTestRunner
         failures += CheckInsertSorted();
         failures += CheckRemoveAll();
         failures += CheckInsertBefore();
+        failures += CheckTasks9To12();
         failures += CheckHighlightedPositions();
 
         Console.WriteLine();
@@ -272,6 +273,46 @@ public static class LinkedListSelfTestRunner
         list = From();
         list.InsertBefore(9, 1);
         failures += CheckList("  пустой список", list, Array.Empty<int>());
+
+        Console.WriteLine();
+        return failures;
+    }
+
+    private static int CheckTasks9To12()
+    {
+        Console.WriteLine("Задания 9–12. Дописывание, разбиение, удвоение и обмен");
+
+        var failures = 0;
+
+        var left = From(1, 2);
+        var right = From(3, 4);
+        left.AppendList(right);
+        failures += CheckList("  9. дописывание E", left, new[] { 1, 2, 3, 4 });
+
+        var self = From(1, 2);
+        self.AppendList(self);
+        failures += CheckList("  9. дописывание самого себя", self, new[] { 1, 2, 1, 2 });
+
+        var splitSource = From(1, 2, 3, 2, 4);
+        var split = splitSource.SplitByValue(2);
+        failures += CheckList("  10. левая часть", split.left, new[] { 1, 2 });
+        failures += CheckList("  10. правая часть", split.right, new[] { 3, 2, 4 });
+
+        var missing = From(5, 6).SplitByValue(99);
+        failures += CheckList("  10. X отсутствует: L1", missing.left, new[] { 5, 6 });
+        failures += CheckList("  10. X отсутствует: L2", missing.right, Array.Empty<int>());
+
+        var doubled = From(1, 2, 3);
+        doubled.DoubleList();
+        failures += CheckList("  11. удвоение", doubled, new[] { 1, 2, 3, 1, 2, 3 });
+
+        var swapped = From(1, 2, 3, 4);
+        swapped.SwapValues(2, 4);
+        failures += CheckList("  12. обмен значениями", swapped, new[] { 1, 4, 3, 2 });
+
+        var duplicates = From(1, 2, 2, 3);
+        duplicates.SwapValues(2, 3);
+        failures += CheckList("  12. первое вхождение", duplicates, new[] { 1, 3, 2, 2 });
 
         Console.WriteLine();
         return failures;
