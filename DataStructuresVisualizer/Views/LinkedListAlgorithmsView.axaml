@@ -56,6 +56,10 @@
         <ComboBoxItem Content="7. Вставить E в упорядоченный список" />
         <ComboBoxItem Content="8. Удалить все элементы e" />
         <ComboBoxItem Content="9. Вставить F перед первым E" />
+        <ComboBoxItem Content="10. Дописать список E" />
+        <ComboBoxItem Content="11. Разбить по первому X" />
+        <ComboBoxItem Content="12. Удвоить список" />
+        <ComboBoxItem Content="13. Поменять местами два элемента" />
       </ComboBox>
 
       <TextBlock Classes="panelLabel" Text="Исходный список" />
@@ -76,6 +80,20 @@
       <StackPanel x:Name="Param2Panel" Spacing="4">
         <TextBlock x:Name="Param2Label" Classes="panelLabel" Text="Второй параметр" />
         <TextBox x:Name="Param2Input" Text="5" />
+      </StackPanel>
+
+      <StackPanel x:Name="SecondListPanel" Spacing="4" IsVisible="False">
+        <TextBlock Classes="panelLabel" Text="Список E" />
+        <TextBox x:Name="SecondValuesInput"
+                 Height="60"
+                 AcceptsReturn="True"
+                 FontFamily="Consolas,DejaVu Sans Mono"
+                 Text="2 7 4" />
+        <TextBlock Classes="panelLabel" Text="Файл LinkedListInput" />
+        <ComboBox x:Name="LinkedListFileCombo" HorizontalAlignment="Stretch" />
+        <Button Content="Загрузить L и E из файла"
+                HorizontalAlignment="Stretch"
+                Click="LoadLinkedListFile_Click" />
       </StackPanel>
 
       <WrapPanel>

@@ -1,4 +1,5 @@
 using DataStructuresVisualizer.Controls;
+using DataStructuresVisualizer.Services;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -26,7 +27,10 @@ public partial class LinkedListAlgorithmsView : UserControl
     private readonly List<Border> departing = [];
     private readonly SceneMotion motion = new();
     private readonly LinkLayer links = new() { NodeWidth = NodeWidth, NodeHeight = NodeHeight };
+    private IReadOnlyList<LinkedListInputFile> listFiles = [];
     private int nextId;
+    private bool splitLayout;
+    private int splitIndex;
 
     public LinkedListAlgorithmsView()
     {
@@ -35,6 +39,7 @@ public partial class LinkedListAlgorithmsView : UserControl
         DetachedFromVisualTree += (_, _) => motion.Complete();
         Loaded += (_, _) =>
         {
+            LoadLinkedListFiles();
             TaskSelector.SelectedIndex = 0;
             UpdateTaskUi();
             ApplyValuesFromInput();
@@ -52,6 +57,9 @@ public partial class LinkedListAlgorithmsView : UserControl
     private TextBox Param2Box => Require<TextBox>("Param2Input");
     private StackPanel Param1PanelControl => Require<StackPanel>("Param1Panel");
     private StackPanel Param2PanelControl => Require<StackPanel>("Param2Panel");
+    private StackPanel SecondListPanelControl => Require<StackPanel>("SecondListPanel");
+    private TextBox SecondValuesBox => Require<TextBox>("SecondValuesInput");
+    private ComboBox LinkedListFileSelector => Require<ComboBox>("LinkedListFileCombo");
     private TextBlock Param1LabelControl => Require<TextBlock>("Param1Label");
     private TextBlock Param2LabelControl => Require<TextBlock>("Param2Label");
     private TextBlock StatusText => Require<TextBlock>("LinkedListStatus");
@@ -91,6 +99,8 @@ public partial class LinkedListAlgorithmsView : UserControl
         }
 
         ClearChanged();
+        splitLayout = false;
+        splitIndex = 0;
 
         var task = TaskSelector.SelectedIndex;
         var note = string.Empty;
@@ -248,6 +258,90 @@ public partial class LinkedListAlgorithmsView : UserControl
                 newNode.View.Classes.Add("changed");
                 note = "Элемент F вставлен перед первым E.";
                 break;
+
+            case 9:
+                var appendValues = ParseValues(SecondValuesBox.Text, "список E");
+
+                if (appendValues is null)
+                {
+                    return;
+                }
+
+                foreach (var value in appendValues)
+                {
+                    var appended = CreateNode(value);
+                    nodes.Add(appended);
+                    appended.View.Classes.Add("changed");
+                }
+
+                note = $"К списку дописан список E: {appendValues.Count} элем.";
+                break;
+
+            case 10:
+                var splitValue = ReadParameter(Param1Box, "X");
+
+                if (splitValue is null)
+                {
+                    return;
+                }
+
+                var firstFound = nodes.FindIndex(node => node.Value == splitValue.Value);
+
+                if (firstFound < 0)
+                {
+                    splitLayout = false;
+                    note = "Значение X не найдено: второй список пуст, первый не изменился.";
+                }
+                else
+                {
+                    splitLayout = true;
+                    splitIndex = firstFound + 1;
+                    note = $"Список разбит после первого X: L1 — {splitIndex} элем., L2 — {nodes.Count - splitIndex} элем.";
+                }
+
+                break;
+
+            case 11:
+                var duplicates = nodes.Select(node => CloneNode(node.Value)).ToArray();
+
+                foreach (var duplicate in duplicates)
+                {
+                    nodes.Add(duplicate);
+                    duplicate.View.Classes.Add("changed");
+                }
+
+                note = "Список удвоен: к концу приписана его копия.";
+                break;
+
+            case 12:
+                var swapFirst = ReadParameter(Param1Box, "первое значение");
+                var swapSecond = ReadParameter(Param2Box, "второе значение");
+
+                if (swapFirst is null || swapSecond is null)
+                {
+                    return;
+                }
+
+                if (swapFirst.Value == swapSecond.Value)
+                {
+                    StatusText.Text = "Нужны два разных значения.";
+                    return;
+                }
+
+                var swapIndex1 = nodes.FindIndex(node => node.Value == swapFirst.Value);
+                var swapIndex2 = nodes.FindIndex(node => node.Value == swapSecond.Value);
+
+                if (swapIndex1 < 0 || swapIndex2 < 0)
+                {
+                    StatusText.Text = "Одно из значений не найдено.";
+                    return;
+                }
+
+                (nodes[swapIndex1], nodes[swapIndex2]) = (nodes[swapIndex2], nodes[swapIndex1]);
+                nodes[swapIndex1].View.Classes.Add("changed");
+                nodes[swapIndex2].View.Classes.Add("changed");
+                note = $"Элементы {swapFirst} и {swapSecond} поменялись местами.";
+                break;
         }
 
         LayoutNodes();
@@ -257,9 +351,40 @@ public partial class LinkedListAlgorithmsView : UserControl
 
     private void Reset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        splitLayout = false;
+        splitIndex = 0;
         ApplyValuesFromInput();
         ClearChanged();
         StatusText.Text = "Список восстановлен из поля ввода.";
+    }
+
+    private void LoadLinkedListFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var index = LinkedListFileSelector.SelectedIndex;
+
+        if (index < 0 || index >= listFiles.Count)
+        {
+            StatusText.Text = "Файл не выбран.";
+            return;
+        }
+
+        var file = listFiles[index];
+
+        if (file.Error is not null)
+        {
+            StatusText.Text = $"Ошибка файла: {file.Error}";
+            return;
+        }
+
+        ValuesBox.Text = string.Join(" ", file.Left);
+        SecondValuesBox.Text = string.Join(" ", file.Right);
+
+        if (!ApplyValuesFromInput())
+        {
+            return;
+        }
+
+        StatusText.Text = $"Загружены списки L и E из {file.Name}.";
     }
 
     private bool ApplyValuesFromInput(bool onlyIfChanged = false)
@@ -285,11 +410,14 @@ public partial class LinkedListAlgorithmsView : UserControl
             return true;
         }
 
+        splitLayout = false;
+        splitIndex = 0;
         motion.Complete();
         nodes.Clear();
         departing.Clear();
         Surface.Children.Clear();
         Surface.Children.Add(links);
+        links.Chains = null;
         nextId = 0;
 
         foreach (var value in values)
@@ -301,6 +429,49 @@ public partial class LinkedListAlgorithmsView : UserControl
         LayoutNodes();
         UpdateState(values.Count == 0 ? "Список пуст." : "Список загружен.");
         return true;
+    }
+
+    private List<int>? ParseValues(string? text, string name)
+    {
+        var result = new List<int>();
+
+        foreach (var token in (text ?? string.Empty).Split(
+                     [' ', ',', '\t', '\r', '\n'],
+                     StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (!int.TryParse(token, out var value))
+            {
+                StatusText.Text = $"В {name} найдено некорректное значение: {token}";
+                return null;
+            }
+
+            result.Add(value);
+        }
+
+        if (result.Count == 0)
+        {
+            StatusText.Text = $"Список {name} пуст.";
+            return null;
+        }
+
+        return result;
+    }
+
+    private void LoadLinkedListFiles()
+    {
+        listFiles = LinkedListFileService.LoadFiles();
+
+        if (listFiles.Count == 0)
+        {
+            LinkedListFileSelector.ItemsSource = new[] { "Файлы не найдены" };
+            LinkedListFileSelector.SelectedIndex = 0;
+            return;
+        }
+
+        LinkedListFileSelector.ItemsSource = listFiles
+            .Select(file => file.Error is null ? file.Name : $"{file.Name} ⚠")
+            .ToArray();
+        LinkedListFileSelector.SelectedIndex = 0;
     }
 
     private VisualNode CreateNode(int value)
@@ -356,22 +527,51 @@ public partial class LinkedListAlgorithmsView : UserControl
                 }, milliseconds: 180);
             return;
         }
-        Surface.Width = Math.Max(260, 60 + nodes.Count * (NodeWidth + NodeGap));
+
+        var rowCount = splitLayout
+            ? Math.Max(splitIndex, nodes.Count - splitIndex)
+            : nodes.Count;
+
+        Surface.Width = Math.Max(260, 60 + rowCount * (NodeWidth + NodeGap));
         var targets = new List<SceneMotion.Target>();
-        var lane = NodeTop + NodeHeight + 30;
+        var lane = NodeTop + NodeHeight + 40;
+        var splitTop = NodeTop + 120;
+
         for (var i = 0; i < nodes.Count; i++)
         {
-            var x = 30 + i * (NodeWidth + NodeGap);
-            var moves = Math.Abs(Canvas.GetLeft(nodes[i].View) - x) > 1;
-            targets.Add(new(nodes[i].View, x, NodeTop, 1, moves ? lane : 0));
-            if (moves) lane += NodeHeight + 30;
+            var secondRow = splitLayout && i >= splitIndex;
+            var rowIndex = secondRow ? i - splitIndex : i;
+            var x = 30 + rowIndex * (NodeWidth + NodeGap);
+            var y = secondRow ? splitTop : NodeTop;
+            var moves = Math.Abs(Canvas.GetLeft(nodes[i].View) - x) > 1 ||
+                        Math.Abs(Canvas.GetTop(nodes[i].View) - y) > 1;
+
+            targets.Add(new(nodes[i].View, x, y, 1, moves ? lane : 0));
+
+            if (moves)
+            {
+                lane += NodeHeight + 30;
+            }
         }
-        Surface.Height = Math.Max(180, lane + NodeHeight + 30);
-        links.Nodes = nodes.Select(n => (Control)n.View).ToArray();
-        links.Width = Surface.Width; links.Height = Surface.Height;
+
+        var settledHeight = splitLayout ? 340 : 180;
+        Surface.Height = Math.Max(settledHeight, lane + NodeHeight + 30);
+        links.Nodes = splitLayout
+            ? []
+            : nodes.Select(n => (Control)n.View).ToArray();
+        links.Chains = splitLayout
+            ? new[]
+            {
+                nodes.Take(splitIndex).Select(n => (Control)n.View).ToArray(),
+                nodes.Skip(splitIndex).Select(n => (Control)n.View).ToArray()
+            }
+            : null;
+        links.Width = Surface.Width;
+        links.Height = Surface.Height;
+
         motion.Animate(targets, links.InvalidateVisual, () =>
         {
-            Surface.Height = 180;
+            Surface.Height = splitLayout ? 340 : 180;
             links.Height = Surface.Height;
         }, 650);
     }
@@ -388,17 +588,22 @@ public partial class LinkedListAlgorithmsView : UserControl
     {
         var task = TaskSelector.SelectedIndex;
 
-        Param1PanelControl.IsVisible = task is 5 or 6 or 7 or 8;
-        Param2PanelControl.IsVisible = task == 8;
+        Param1PanelControl.IsVisible = task is 5 or 6 or 7 or 8 or 10 or 12;
+        Param2PanelControl.IsVisible = task is 8 or 12;
+        SecondListPanelControl.IsVisible = task == 9;
         Param1LabelControl.Text = task switch
         {
             5 => "x — значение для поиска",
             6 => "E — вставляемое значение",
             7 => "e — удаляемое значение",
             8 => "F — вставляемое значение",
+            10 => "X — значение для разбиения",
+            12 => "Первое значение",
             _ => "Параметр"
         };
-        Param2LabelControl.Text = "E — перед этим значением";
+        Param2LabelControl.Text = task == 12
+            ? "Второе значение"
+            : "E — перед этим значением";
 
         DescriptionText.Text = task switch
         {
@@ -411,6 +616,10 @@ public partial class LinkedListAlgorithmsView : UserControl
             6 => "Вставляет E перед первым элементом, который не меньше E.",
             7 => "Удаляет все узлы со значением e.",
             8 => "Вставляет F перед первым вхождением E.",
+            9 => "Дописывает список E в конец L. Второй список можно загрузить из LinkedListInput.",
+            10 => "Разбивает список после первого вхождения X на L1 и L2. Если X нет, L2 пуст.",
+            11 => "Удваивает список: дописывает в конец его полную копию.",
+            12 => "Меняет местами два элемента с заданными значениями.",
             _ => "Список — последовательность узлов, связанных ссылками."
         };
     }

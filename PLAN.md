@@ -273,7 +273,14 @@ CSV хранит алгоритмическое время, экран — ещ�
 5. `InsertSelfAfter` — вставка копии списка после первого `x`;
 6. `InsertSorted` — вставка в неубывающий список;
 7. `RemoveAll` — удаление всех вхождений `e`;
-8. `InsertBefore` — вставка `f` перед первым `e`.
+8. `InsertBefore` — вставка `f` перед первым `e`;
+9. `AppendList` — дописывание списка E в конец L;
+10. `SplitByValue` — разбиение по первому вхождению X;
+11. `DoubleList` — удвоение списка;
+12. `SwapValues` — обмен двух элементов по значениям.
+
+Для задания 9 добавлены файлы `LinkedListInput/*.txt`: две строки
+со списками L и E. В интерфейсе можно загрузить их вручную или выбрать файл.
 
 Для проверки содержимого добавлен `ToArray`. Все тесты запускаются отдельно:
 
@@ -306,7 +313,7 @@ dotnet run -- --linked-list-test
 
 ### Структура
 
-- `Views/MainWindow.axaml` — левая навигация по пяти разделам;
+- `Views/MainWindow.axaml` — левая навигация по шести разделам;
 - `Views/StackDemoView.axaml` — стек с операциями и анимацией карточек;
 - `Views/InfixPostfixView.axaml` — пошаговое преобразование инфиксной записи;
 - `Views/QueueDemoView.axaml` — две реализации очереди и замеры;
@@ -314,7 +321,8 @@ dotnet run -- --linked-list-test
 - `Views/MazeView.axaml` — DFS-лабиринт и стек;
 - `Views/QueueView.axaml` — банк/МФЦ и очередь;
 - `Views/TreeView.axaml` — дерево арифметического выражения;
-- `Views/LinkedListAlgorithmsView.axaml` — 8 алгоритмов со связным списком;
+- `Views/LinkedListAlgorithmsView.axaml` — 12 алгоритмов со связным списком;
+- `Services/LinkedListFileService.cs` — импорт двух списков L и E;
 - `Views/BinaryTreeView.axaml` — раздел 5: префиксное бинарное дерево;
 - `Services/BinaryTreeService.cs` — разбор строки, раскладка и статистика;
 - `Models/BinaryTreeModels.cs` — узел бинарного дерева;
