@@ -14,6 +14,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Core\Interfaces\IExpressionConverter.cs" Link="Core\Interfaces\IExpressionConverter.cs" />
+    <Compile Include="..\Core\Interfaces\IPostfixEvaluator.cs" Link="Core\Interfaces\IPostfixEvaluator.cs" />
+    <Compile Include="..\Core\Interfaces\IStackADT.cs" Link="Core\Interfaces\IStackADT.cs" />
+    <Compile Include="..\Core\Structures\LinkedStack.cs" Link="Core\Structures\LinkedStack.cs" />
+    <Compile Include="..\Services\ExpressionExceptions.cs" Link="Services\ExpressionExceptions.cs" />
+    <Compile Include="..\Services\ExpressionTokenizer.cs" Link="Services\ExpressionTokenizer.cs" />
+    <Compile Include="..\Services\InfixToPostfixConverter.cs" Link="Services\InfixToPostfixConverter.cs" />
+    <Compile Include="..\Services\MathExpressionRules.cs" Link="Services\MathExpressionRules.cs" />
+    <Compile Include="..\Services\PostfixEvaluator.cs" Link="Services\PostfixEvaluator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.1.0" />
     <PackageReference Include="Avalonia.Desktop" Version="11.1.0" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.0" />

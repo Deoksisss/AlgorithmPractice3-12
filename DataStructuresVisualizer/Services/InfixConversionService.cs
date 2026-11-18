@@ -1,3 +1,6 @@
+using System.Globalization;
+using StackQueueLab.Services;
+
 namespace DataStructuresVisualizer.Services;
 
 public sealed record InfixConversionStep(
@@ -15,138 +18,201 @@ public sealed record InfixConversionResult(
 
 public static class InfixConversionService
 {
-    private sealed record Token(string Text, bool IsNumber);
+    private sealed record StackEntry(string Text, int Index);
 
     public static InfixConversionResult ConvertWithSteps(string expression)
     {
-        var tokens = Tokenize(expression);
-        // Validate grammar using the same parser as the expression tree before producing frames.
-        ExpressionService.BuildTree(ExpressionService.ToPostfix(expression));
-        var stack = new Stack<(string Text, int Index)>();
-        var output = new List<(string Text, int Index)>();
+        var tokens = ExpressionTokenizer.TokenizeInfix(expression);
+        var texts = tokens
+            .Select(token => token.Kind == InfixTokenKind.Number
+                ? NumberText.Format(token.Number)
+                : token.Text)
+            .ToArray();
+
+        // The console converter validates the grammar and produces the final postfix form.
+        var postfix = new InfixToPostfixConverter().Convert(expression);
+
+        var stack = new Stack<StackEntry>();
+        var output = new List<StackEntry>();
         var steps = new List<InfixConversionStep>();
-        void Record(int index, string message) => steps.Add(new InfixConversionStep(index,
-            stack.Select(t => t.Text).ToArray(), output.Select(t => t.Text).ToArray(), message,
-            stack.Select(t => t.Index).ToArray(), output.Select(t => t.Index).ToArray()));
-        void Pop(int index)
+
+        void Record(int index, string message) => steps.Add(new InfixConversionStep(
+            index,
+            stack.Select(entry => entry.Text).ToArray(),
+            output.Select(entry => entry.Text).ToArray(),
+            message,
+            stack.Select(entry => entry.Index).ToArray(),
+            output.Select(entry => entry.Index).ToArray()));
+
+        void PopToOutput(int index)
         {
             var moved = stack.Pop();
             output.Add(moved);
             Record(index, $"Извлекаем «{moved.Text}» с вершины стека в выход.");
         }
+
+        InfixToken? previous = null;
+
         for (var i = 0; i < tokens.Count; i++)
         {
             var token = tokens[i];
-            Record(i, $"Читаем «{token.Text}».");
-            if (token.IsNumber)
+            var text = texts[i];
+            Record(i, $"Читаем «{text}».");
+
+            switch (token.Kind)
             {
-                output.Add((token.Text, i));
-                Record(i, $"Число «{token.Text}» переносим в выход.");
+                case InfixTokenKind.Number:
+                    output.Add(new StackEntry(text, i));
+                    Record(i, $"Число «{text}» переносим в выход.");
+                    break;
+
+                case InfixTokenKind.Function:
+                    if (i + 1 >= tokens.Count || tokens[i + 1].Kind != InfixTokenKind.LeftParenthesis)
+                    {
+                        throw new ExpressionSyntaxException(
+                            $"После функции «{token.Text}» нужна скобка, например {token.Text}(0.5).");
+                    }
+
+                    stack.Push(new StackEntry(token.Text, i));
+                    Record(i, $"Функцию «{token.Text}» помещаем в стек: у неё самый высокий приоритет.");
+                    break;
+
+                case InfixTokenKind.LeftParenthesis:
+                    stack.Push(new StackEntry(token.Text, i));
+                    Record(i, "Открывающую скобку помещаем в стек.");
+                    break;
+
+                case InfixTokenKind.RightParenthesis:
+                    while (stack.Count > 0 && stack.Peek().Text != "(")
+                    {
+                        PopToOutput(i);
+                    }
+
+                    if (stack.Count == 0)
+                    {
+                        throw new ExpressionSyntaxException("Не найдена открывающая скобка.");
+                    }
+
+                    stack.Pop();
+                    Record(i, "Парные скобки удаляем; в постфиксную запись они не входят.");
+
+                    if (stack.Count > 0 && MathExpressionRules.IsFunction(stack.Peek().Text))
+                    {
+                        var function = stack.Pop();
+                        output.Add(function);
+                        Record(i, $"Функцию «{function.Text}» переносим в выход после её аргумента.");
+                    }
+
+                    break;
+
+                case InfixTokenKind.BinaryOperator:
+                    var isUnary = previous is null ||
+                                  previous.Kind is InfixTokenKind.BinaryOperator or InfixTokenKind.LeftParenthesis;
+
+                    if (isUnary)
+                    {
+                        if (token.Text == "-")
+                        {
+                            stack.Push(new StackEntry("u-", i));
+                            Record(i, "Унарный минус помещаем в стек.");
+                        }
+                        else if (token.Text == "+")
+                        {
+                            Record(i, "Унарный плюс не меняет значение выражения.");
+                        }
+                        else
+                        {
+                            throw new ExpressionSyntaxException($"Оператор «{token.Text}» не может быть унарным.");
+                        }
+                    }
+                    else
+                    {
+                        while (stack.Count > 0 && ShouldPop(stack.Peek().Text, token.Text))
+                        {
+                            PopToOutput(i);
+                        }
+
+                        stack.Push(new StackEntry(token.Text, i));
+                        Record(i,
+                            $"Оператор «{token.Text}» (приоритет {MathExpressionRules.Precedence(token.Text)}) помещаем на вершину.");
+                    }
+
+                    break;
             }
-            else if (token.Text == "(")
-            {
-                stack.Push((token.Text, i));
-                Record(i, "Открывающую скобку помещаем в стек.");
-            }
-            else if (token.Text == ")")
-            {
-                while (stack.Count > 0 && stack.Peek().Text != "(") Pop(i);
-                if (stack.Count == 0) throw new ExpressionConversionException("Не найдена открывающая скобка.");
-                stack.Pop();
-                Record(i, "Парные скобки удаляем; в постфиксную запись они не входят.");
-            }
-            else
-            {
-                while (stack.Count > 0 && stack.Peek().Text != "(" &&
-                       Precedence(stack.Peek().Text) >= Precedence(token.Text)) Pop(i);
-                stack.Push((token.Text, i));
-                Record(i, $"Оператор «{token.Text}» (приоритет {Precedence(token.Text)}) помещаем на вершину.");
-            }
+
+            previous = token;
         }
+
         while (stack.Count > 0)
         {
-            if (stack.Peek().Text == "(") throw new ExpressionConversionException("Не закрыта скобка.");
-            Pop(tokens.Count);
+            if (stack.Peek().Text == "(")
+            {
+                throw new ExpressionSyntaxException("Не закрыта скобка.");
+            }
+
+            PopToOutput(tokens.Count);
         }
+
         Record(tokens.Count, "Готово: все операторы перенесены в выходную запись.");
-        return new InfixConversionResult(tokens.Select(t => t.Text).ToArray(), steps,
-            string.Join(" ", output.Select(t => t.Text)));
+
+        return new InfixConversionResult(texts, steps, postfix);
     }
 
-    private static string Describe(string token) => token switch
-    {
-        _ when token == "(" => "Открывающая скобка: помещаем в стек.",
-        _ when token == ")" => "Закрывающая скобка: выталкиваем операторы до (.",
-        _ => $"Читаем «{token}»."
-    };
+    public static double EvaluatePostfix(string postfix) => new PostfixEvaluator().Evaluate(postfix);
 
-    private static int Precedence(string operation) => operation switch
+    public static string GenerateRandomExpression(Random? random = null, int maxDepth = 2)
     {
-        "+" or "-" => 1,
-        "*" or "/" => 2,
-        _ => 0
-    };
+        random ??= Random.Shared;
 
-    private static List<Token> Tokenize(string expression)
-    {
-        if (string.IsNullOrWhiteSpace(expression))
+        string Build(int depth)
         {
-            throw new ExpressionConversionException("Выражение пустое.");
-        }
-
-        var result = new List<Token>();
-        var index = 0;
-
-        while (index < expression.Length)
-        {
-            var current = expression[index];
-
-            if (char.IsWhiteSpace(current))
+            if (depth <= 0)
             {
-                index++;
-                continue;
+                return random.Next(1, 10).ToString(CultureInfo.InvariantCulture);
             }
 
-            if (char.IsDigit(current) || current == '.')
+            if (random.Next(6) == 0)
             {
-                var start = index;
-
-                while (index < expression.Length &&
-                       (char.IsDigit(expression[index]) || expression[index] == '.'))
-                {
-                    index++;
-                }
-
-                var text = expression[start..index];
-
-                if (!double.TryParse(
-                        text,
-                        System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out _))
-                {
-                    throw new ExpressionConversionException($"Некорректное число «{text}».");
-                }
-
-                result.Add(new Token(text, true));
-                continue;
+                var function = new[] { "ln", "cos", "sin", "sqrt" }[random.Next(4)];
+                var argument = random.Next(1, 10).ToString(CultureInfo.InvariantCulture);
+                return $"{function}({argument})";
             }
 
-            if (current is '+' or '-' or '*' or '/' or '(' or ')')
+            var left = Build(depth - 1);
+            var operation = new[] { "+", "-", "*", ":", "^" }[random.Next(5)];
+            var right = operation switch
             {
-                result.Add(new Token(current.ToString(), false));
-                index++;
-                continue;
-            }
+                ":" => random.Next(1, 10).ToString(CultureInfo.InvariantCulture),
+                "^" => random.Next(1, 4).ToString(CultureInfo.InvariantCulture),
+                _ => Build(depth - 1)
+            };
 
-            throw new ExpressionConversionException($"Недопустимый символ «{current}».");
+            return $"({left} {operation} {right})";
         }
 
-        if (result.Count == 0)
+        return Build(random.Next(1, maxDepth + 1));
+    }
+
+    private static bool ShouldPop(string top, string incoming)
+    {
+        if (!MathExpressionRules.IsBinaryOperator(top) && !MathExpressionRules.IsUnaryMinus(top))
         {
-            throw new ExpressionConversionException("Выражение не содержит токенов.");
+            return false;
         }
 
-        return result;
+        var topPrecedence = MathExpressionRules.Precedence(top);
+        var incomingPrecedence = MathExpressionRules.Precedence(incoming);
+
+        if (topPrecedence > incomingPrecedence)
+        {
+            return true;
+        }
+
+        if (topPrecedence < incomingPrecedence)
+        {
+            return false;
+        }
+
+        return !MathExpressionRules.IsRightAssociative(incoming);
     }
 }

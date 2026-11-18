@@ -40,7 +40,7 @@ public partial class InfixPostfixView : UserControl
     private void RandomExpression_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         StopAnimation();
-        InputBox.Text = ExpressionService.GenerateRandomExpression(Random.Shared);
+        InputBox.Text = InfixConversionService.GenerateRandomExpression(Random.Shared);
         conversion = null;
         FinalPostfix.Text = "—";
         FinalValue.Text = "—";
@@ -228,11 +228,8 @@ public partial class InfixPostfixView : UserControl
         timer = null;
     }
 
-    private static double Evaluate(string postfix)
-    {
-        var root = ExpressionService.BuildTree(postfix);
-        return ExpressionService.Evaluate(root, []);
-    }
+    private static double Evaluate(string postfix) =>
+        InfixConversionService.EvaluatePostfix(postfix);
 
     private static string Format(double value) =>
         value.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);

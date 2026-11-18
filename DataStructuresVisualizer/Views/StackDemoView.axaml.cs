@@ -1,10 +1,13 @@
 using DataStructuresVisualizer.Controls;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using DataStructuresVisualizer.Services;
+using StackQueueLab.Core.Structures;
 
 namespace DataStructuresVisualizer.Views;
 
@@ -15,13 +18,14 @@ public partial class StackDemoView : UserControl
     private const double CardLeft = 30;
     private const double TopStart = 32;
 
-    private readonly List<string> values = [];
+    private LinkedStack<string> stack = new();
     private readonly List<Border> cards = [];
     private readonly List<string> log = [];
     private readonly List<(int code, string? value)> pendingOperations = [];
 
     private DispatcherTimer? sequenceTimer;
     private int operationIndex;
+    private double totalOperationMilliseconds;
     private readonly SceneMotion motion = new();
     private IReadOnlyList<ImportedOperationFile> stackFiles = [];
     private ImportedOperationFile? selectedStackFile;
@@ -50,6 +54,9 @@ public partial class StackDemoView : UserControl
     private TextBlock StatusText => Require<TextBlock>("StackStatus");
     private TextBlock CountText => Require<TextBlock>("StackCountText");
     private TextBlock TopText => Require<TextBlock>("StackTopText");
+    private TextBlock ReadTimeText => Require<TextBlock>("StackReadTimeText");
+    private TextBlock OperationTimeText => Require<TextBlock>("StackOperationTimeText");
+    private TextBlock TotalTimeText => Require<TextBlock>("StackTotalTimeText");
     private ListBox LogBox => Require<ListBox>("StackLogList");
     private ComboBox StackFileSelector => Require<ComboBox>("StackFileCombo");
     private ComboBox StackSetSelector => Require<ComboBox>("StackSetCombo");
@@ -68,33 +75,48 @@ public partial class StackDemoView : UserControl
 
     private void Top_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (values.Count == 0)
+        if (stack.IsEmpty)
         {
             AppendLog("Top → стек пуст");
             StatusText.Text = "Стек пуст.";
             return;
         }
 
-        AppendLog($"Top → {values[0]}");
-        StatusText.Text = $"Вершина стека: {values[0]}";
+        var watch = Stopwatch.StartNew();
+        var top = stack.Peek();
+        watch.Stop();
+        RecordOperation("Top", watch);
+
+        AppendLog($"Top → {top}");
+        StatusText.Text = $"Вершина стека: {top}";
     }
 
     private void IsEmpty_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        var empty = values.Count == 0;
+        var watch = Stopwatch.StartNew();
+        var empty = stack.IsEmpty;
+        watch.Stop();
+        RecordOperation("isEmpty", watch);
+
         AppendLog($"isEmpty → {(empty ? "true" : "false")}");
         StatusText.Text = empty ? "Стек пуст." : "Стек содержит элементы.";
     }
 
     private void Print_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (values.Count == 0)
+        var watch = Stopwatch.StartNew();
+        var snapshot = stack.Snapshot();
+        var text = snapshot.Count == 0 ? "[ ]" : $"[ {string.Join(", ", snapshot)} ]";
+        watch.Stop();
+        RecordOperation("Print", watch);
+
+        if (snapshot.Count == 0)
         {
             AppendLog("Print → [ ]");
             return;
         }
 
-        AppendLog($"Print → [ {string.Join(", ", values)} ]");
+        AppendLog($"Print → {text}");
         StatusText.Text = "Содержимое стека выведено в журнал.";
     }
 
@@ -137,9 +159,13 @@ public partial class StackDemoView : UserControl
     {
         StopSequence();
         motion.Complete();
-        values.Clear();
+        stack = new LinkedStack<string>();
+        totalOperationMilliseconds = 0;
         cards.Clear();
         log.Clear();
+        ReadTimeText.Text = "Чтение: —";
+        OperationTimeText.Text = "Операция: —";
+        UpdateTotalTimeLabel();
         foreach (var card in Surface.Children.OfType<Border>().ToArray()) Surface.Children.Remove(card);
         LayoutCards();
         LogBox.ItemsSource = null;
@@ -157,6 +183,7 @@ public partial class StackDemoView : UserControl
         }
 
         selectedStackFile = stackFiles[index];
+        ReadTimeText.Text = $"Чтение: {FormatMilliseconds(selectedStackFile.ReadMilliseconds)} мс";
 
         if (selectedStackFile.Error is not null)
         {
@@ -300,7 +327,10 @@ public partial class StackDemoView : UserControl
     private void Push(string value)
     {
         motion.Complete();
-        values.Insert(0, value);
+        var watch = Stopwatch.StartNew();
+        stack.Push(value);
+        watch.Stop();
+        RecordOperation("Push", watch);
 
         var card = CreateCard(value);
         cards.Insert(0, card);
@@ -317,17 +347,19 @@ public partial class StackDemoView : UserControl
     private void Pop()
     {
         motion.Complete();
-        if (values.Count == 0)
+        if (stack.IsEmpty)
         {
             AppendLog("Pop → пусто");
             StatusText.Text = "Pop невозможен: стек пуст.";
             return;
         }
 
-        var value = values[0];
-        var card = cards[0];
+        var watch = Stopwatch.StartNew();
+        var value = stack.Pop();
+        watch.Stop();
+        RecordOperation("Pop", watch);
 
-        values.RemoveAt(0);
+        var card = cards[0];
         cards.RemoveAt(0);
         LayoutCards(card);
         AppendLog($"Pop → {value}");
@@ -356,7 +388,7 @@ public partial class StackDemoView : UserControl
     private void LayoutCards(Border? removed = null, Border? incoming = null)
     {
         Surface.Width = 520;
-        var settledHeight = Math.Max(160, TopStart + values.Count * (CardHeight + CardGap) + 24);
+        var settledHeight = Math.Max(160, TopStart + stack.Count * (CardHeight + CardGap) + 24);
         Surface.Height = removed is null ? settledHeight : Math.Max(Surface.Height, settledHeight);
         var targets = new List<SceneMotion.Target>();
         for (var i = 0; i < cards.Count; i++)
@@ -383,10 +415,25 @@ public partial class StackDemoView : UserControl
 
     private void UpdateState()
     {
-        CountText.Text = $"Элементов: {values.Count}";
-        TopText.Text = values.Count == 0 ? "Вершина: —" : $"Вершина: {values[0]}";
-        StatusText.Text = values.Count == 0 ? "Стек пуст." : "Операция выполнена.";
+        CountText.Text = $"Элементов: {stack.Count}";
+        TopText.Text = stack.IsEmpty ? "Вершина: —" : $"Вершина: {stack.Peek()}";
+        StatusText.Text = stack.IsEmpty ? "Стек пуст." : "Операция выполнена.";
     }
+
+    private void RecordOperation(string name, Stopwatch watch)
+    {
+        totalOperationMilliseconds += watch.Elapsed.TotalMilliseconds;
+        OperationTimeText.Text = $"{name}: {FormatMilliseconds(watch.Elapsed.TotalMilliseconds)} мс";
+        UpdateTotalTimeLabel();
+    }
+
+    private void UpdateTotalTimeLabel()
+    {
+        TotalTimeText.Text = $"Всего: {FormatMilliseconds(totalOperationMilliseconds)} мс";
+    }
+
+    private static string FormatMilliseconds(double milliseconds) =>
+        milliseconds.ToString("0.######", CultureInfo.InvariantCulture);
 
     private void AppendLog(string message)
     {

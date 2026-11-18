@@ -39,7 +39,7 @@
       <TextBlock Classes="sectionTitle" Text="Раздел 1. Стек" />
       <TextBlock TextWrapping="Wrap"
                  Foreground="{StaticResource Muted}"
-                 Text="Push добавляет на вершину, Pop снимает вершину. Стек работает по принципу LIFO." />
+                 Text="Push добавляет на вершину, Pop снимает вершину. Стек работает по принципу LIFO и построен на собственном связном списке." />
 
       <TextBlock Classes="panelLabel" Text="Значение" />
       <TextBox x:Name="StackValueInput" Text="42" />
@@ -81,7 +81,34 @@
     </ScrollViewer>
 
     <Border Grid.Column="1" Background="#0C1A2B" CornerRadius="16" Padding="10">
-      <scene:SceneViewport ><scene:SceneViewport.Scene>
+      <Grid RowDefinitions="Auto,*">
+        <Grid ColumnDefinitions="Auto,*" Margin="4,0,4,6">
+          <TextBlock Text="Стек · LIFO"
+                     VerticalAlignment="Center"
+                     FontSize="13"
+                     FontWeight="SemiBold"
+                     Foreground="{StaticResource Accent}" />
+          <StackPanel Grid.Column="1"
+                      Orientation="Horizontal"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Center"
+                      Spacing="12">
+            <TextBlock x:Name="StackReadTimeText"
+                       Text="Чтение: —"
+                       FontSize="11"
+                       Foreground="{StaticResource Muted}" />
+            <TextBlock x:Name="StackOperationTimeText"
+                       Text="Операция: —"
+                       FontSize="11"
+                       Foreground="{StaticResource Muted}" />
+            <TextBlock x:Name="StackTotalTimeText"
+                       Text="Всего: 0 мс"
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource Accent}" />
+          </StackPanel>
+        </Grid>
+        <scene:SceneViewport Grid.Row="1"><scene:SceneViewport.Scene>
 <Canvas x:Name="StackCanvas" Width="520"
                 Height="480"
                 ClipToBounds="True">
@@ -92,6 +119,7 @@
                      FontSize="10" />
         </Canvas>
 </scene:SceneViewport.Scene></scene:SceneViewport>
+      </Grid>
     </Border>
 
     <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Disabled">

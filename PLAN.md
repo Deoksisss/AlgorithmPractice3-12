@@ -314,7 +314,8 @@ dotnet run -- --linked-list-test
 ### Структура
 
 - `Views/MainWindow.axaml` — левая навигация по шести разделам;
-- `Views/StackDemoView.axaml` — стек с операциями и анимацией карточек;
+- `Views/StackDemoView.axaml` — стек на `LinkedStack<T>` с операциями,
+  анимацией карточек и замерами времени чтения файла и операций;
 - `Views/InfixPostfixView.axaml` — пошаговое преобразование инфиксной записи;
 - `Views/QueueDemoView.axaml` — две реализации очереди и замеры;
 - `Views/ExamplesView.axaml` — три готовые визуализации раздела 3;
@@ -328,7 +329,8 @@ dotnet run -- --linked-list-test
 - `Models/BinaryTreeModels.cs` — узел бинарного дерева;
 - `Services/MazeService.cs` — генерация, разбор и пошаговый DFS;
 - `Services/BankService.cs` — генерация и разбор клиентов;
-- `Services/InfixConversionService.cs` — кадры алгоритма shunting-yard;
+- `Services/InfixConversionService.cs` — кадры алгоритма shunting-yard,
+  все операторы `+ - * : ^ ln cos sin sqrt` и вычисление постфиксной записи;
 - `Services/ExpressionService.cs` — инфикс → постфикс, построение дерева,
   раскладка и вычисление;
 - `Models/` — `MazePoint`, `BankCustomer`, `ExpressionNode`, шаги анимаций.
@@ -348,5 +350,8 @@ dotnet run -- --linked-list-test
   исключает `EXTREME`-файлы и позволяет выбрать конкретный набор.
 - Очередь: для каждой реализации накапливается общее время операций и
   отображается в правом верхнем углу соответствующей области анимации.
+- Стек: `StackDemoView` использует `LinkedStack<T>` из основного проекта;
+  время чтения выбранного файла и время каждой операции (с накопительным
+  итогом) выводятся в правом верхнем углу области визуализации без CSV.
 - Связный список: позиции узлов интерполируются таймером каждые 16 мс;
   новые узлы появляются с изменением прозрачности, удалённые исчезают.

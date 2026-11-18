@@ -10,6 +10,7 @@ using DataStructuresVisualizer.Controls;
 using DataStructuresVisualizer.Models;
 using DataStructuresVisualizer.Services;
 using DataStructuresVisualizer.Views;
+using StackQueueLab.Core.Structures;
 
 internal static class Program
 {
@@ -79,6 +80,12 @@ internal static class Program
                 previousOutput = step.Output.Count;
             }
         }
+        var extended = InfixConversionService.ConvertWithSteps("sin(0)+sqrt(9)");
+        Assert(extended.Postfix == "0 sin 9 sqrt +", "Extended infix conversion");
+        Assert(Math.Abs(InfixConversionService.EvaluatePostfix(extended.Postfix) - 3) < 1e-9, "Extended postfix evaluation");
+        Assert(InfixConversionService.ConvertWithSteps("2^3^2").Postfix == "2 3 2 ^ ^", "Right-associative power");
+        Assert(InfixConversionService.EvaluatePostfix("10 2 :") == 5, "Colon division");
+        Assert(InfixConversionService.EvaluatePostfix("2 3 ^ 9 sqrt + 1 - 4 *") == 40, "Extended postfix chain");
         var cache = new LruExpressionCache(4);
         for (var i = 0; i < 5; i++) cache.Put(i.ToString(), i);
         Assert(cache.Count == 4 && cache.Replacements == 1, "LRU eviction");
@@ -101,9 +108,10 @@ internal static class Program
         for (var i = 0; i < 60; i++) Call(view, "Push", i.ToString());
         Settle(view);
         var canvas = Find<Canvas>(view, "StackCanvas"); Contained(canvas);
-        Assert(((IList)Field(view, "values")!)[0]!.Equals("59"), "Stack LIFO top");
+        var stack = (LinkedStack<string>)Field(view, "stack")!;
+        Assert(stack.Snapshot()[0] == "59", "Stack LIFO top");
         Click(view, "Pop_Click"); Settle(view);
-        Assert(((IList)Field(view, "values")!)[0]!.Equals("58"), "Stack LIFO pop");
+        Assert(stack.Snapshot()[0] == "58", "Stack LIFO pop");
         Click(view, "Reset_Click"); Settle(view);
         Assert(canvas.Height < 300 && canvas.Children.OfType<Border>().Count() == 0, "Stack reset extents");
         Assert(canvas.Children.OfType<TextBlock>().Any(), "Reset removed top label");

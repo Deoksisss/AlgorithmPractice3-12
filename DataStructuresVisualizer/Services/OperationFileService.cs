@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace DataStructuresVisualizer.Services;
 
@@ -13,7 +14,8 @@ public sealed record ImportedOperationFile(
     string Name,
     string Path,
     IReadOnlyList<ImportedOperationSet> Sets,
-    string? Error);
+    string? Error,
+    double ReadMilliseconds = 0);
 
 public static class OperationFileService
 {
@@ -31,8 +33,16 @@ public static class OperationFileService
             .EnumerateFiles(folder, "*.txt", SearchOption.TopDirectoryOnly)
             .Where(path => !Path.GetFileName(path).Contains("EXTREME", StringComparison.OrdinalIgnoreCase))
             .OrderBy(path => Path.GetFileName(path), StringComparer.CurrentCultureIgnoreCase)
-            .Select(ReadFile)
+            .Select(ReadFileTimed)
             .ToArray();
+    }
+
+    private static ImportedOperationFile ReadFileTimed(string path)
+    {
+        var watch = Stopwatch.StartNew();
+        var file = ReadFile(path);
+        watch.Stop();
+        return file with { ReadMilliseconds = watch.Elapsed.TotalMilliseconds };
     }
 
     private static ImportedOperationFile ReadFile(string path)

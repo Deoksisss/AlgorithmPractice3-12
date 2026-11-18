@@ -44,6 +44,9 @@
       <TextBlock TextWrapping="Wrap"
                  Foreground="{StaticResource Muted}"
                  Text="Алгоритм Дейкстры: числа сразу идут в выход, операторы временно хранятся в стеке с учётом приоритета." />
+      <TextBlock TextWrapping="Wrap"
+                 Foreground="{StaticResource Muted}"
+                 Text="Поддерживаются +, −, *, :, ^, ln, cos, sin, sqrt и скобки." />
 
       <TextBlock Classes="panelLabel" Text="Инфиксное выражение" />
       <TextBox x:Name="InfixExpressionInput"
@@ -90,7 +93,7 @@
         <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}"
                    Text="Фиолетовым выделяется токен, который читается сейчас. Стек показывает операторы в порядке LIFO. Зелёная лента — уже сформированная постфиксная запись." />
         <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Muted}"
-                   Text="Скобки управляют выталкиванием операторов, а приоритет * и / выше, чем + и -." />
+                   Text="Скобки управляют выталкиванием операторов. Приоритет * и : выше, чем + и −; ^ правоассоциативен, а функции ln, cos, sin и sqrt имеют самый высокий приоритет." />
         <Border Background="#102033" CornerRadius="10" Padding="10">
           <TextBlock x:Name="ConversionCounterText" Text="Шаг: 0 / 0" />
         </Border>
