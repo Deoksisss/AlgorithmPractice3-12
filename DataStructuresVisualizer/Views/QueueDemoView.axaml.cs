@@ -1,6 +1,7 @@
 using DataStructuresVisualizer.Controls;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
@@ -25,6 +26,8 @@ public partial class QueueDemoView : UserControl
 
     private DispatcherTimer? sequenceTimer;
     private int operationIndex;
+    private double linkedTotalMilliseconds;
+    private double standardTotalMilliseconds;
     private readonly SceneMotion linkedMotion = new();
     private readonly SceneMotion standardMotion = new();
     private readonly LinkLayer links = new() { NodeWidth = CardWidth, NodeHeight = 52 };
@@ -36,7 +39,11 @@ public partial class QueueDemoView : UserControl
         InitializeComponent();
         ResponsiveColumns.Attach(this);
         DetachedFromVisualTree += (_, _) => StopSequence();
-        Loaded += (_, _) => LoadQueueFiles();
+        Loaded += (_, _) =>
+        {
+            LoadQueueFiles();
+            UpdateTotalTimeLabels();
+        };
     }
 
     private void InitializeComponent()
@@ -53,6 +60,8 @@ public partial class QueueDemoView : UserControl
     private TextBlock HeadText => Require<TextBlock>("QueueHeadText");
     private TextBlock LinkedTimeLabel => Require<TextBlock>("LinkedTimeText");
     private TextBlock StandardTimeLabel => Require<TextBlock>("StandardTimeText");
+    private TextBlock LinkedTotalTimeLabel => Require<TextBlock>("LinkedTotalTimeText");
+    private TextBlock StandardTotalTimeLabel => Require<TextBlock>("StandardTotalTimeText");
     private ListBox LogBox => Require<ListBox>("QueueLogList");
     private ComboBox QueueFileSelector => Require<ComboBox>("QueueFileCombo");
     private ComboBox QueueSetSelector => Require<ComboBox>("QueueSetCombo");
@@ -78,8 +87,18 @@ public partial class QueueDemoView : UserControl
             return;
         }
 
+        var linkedWatch = Stopwatch.StartNew();
         var linkedHead = linkedQueue.First!.Value;
+        linkedWatch.Stop();
+
+        var standardWatch = Stopwatch.StartNew();
         var standardHead = standardQueue.Peek();
+        standardWatch.Stop();
+
+        linkedTotalMilliseconds += linkedWatch.Elapsed.TotalMilliseconds;
+        standardTotalMilliseconds += standardWatch.Elapsed.TotalMilliseconds;
+        UpdateTotalTimeLabels();
+
         AppendLog($"Peek → связанная: {linkedHead}; Queue<T>: {standardHead}");
         StatusText.Text = $"Голова очереди: {linkedHead}.";
         UpdateState();
@@ -87,15 +106,36 @@ public partial class QueueDemoView : UserControl
 
     private void IsEmpty_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        var empty = linkedQueue.Count == 0;
-        AppendLog($"isEmpty → связанная: {empty}; Queue<T>: {(standardQueue.Count == 0)}");
-        StatusText.Text = empty ? "Очереди пусты." : "Очереди содержат элементы.";
+        var linkedWatch = Stopwatch.StartNew();
+        var linkedEmpty = linkedQueue.Count == 0;
+        linkedWatch.Stop();
+
+        var standardWatch = Stopwatch.StartNew();
+        var standardEmpty = standardQueue.Count == 0;
+        standardWatch.Stop();
+
+        linkedTotalMilliseconds += linkedWatch.Elapsed.TotalMilliseconds;
+        standardTotalMilliseconds += standardWatch.Elapsed.TotalMilliseconds;
+        UpdateTotalTimeLabels();
+
+        AppendLog($"isEmpty → связанная: {linkedEmpty}; Queue<T>: {standardEmpty}");
+        StatusText.Text = linkedEmpty ? "Очереди пусты." : "Очереди содержат элементы.";
     }
 
     private void Print_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        var linkedWatch = Stopwatch.StartNew();
         var linked = linkedQueue.Count == 0 ? "[ ]" : $"[ {string.Join(", ", linkedQueue)} ]";
+        linkedWatch.Stop();
+
+        var standardWatch = Stopwatch.StartNew();
         var standard = standardQueue.Count == 0 ? "[ ]" : $"[ {string.Join(", ", standardQueue)} ]";
+        standardWatch.Stop();
+
+        linkedTotalMilliseconds += linkedWatch.Elapsed.TotalMilliseconds;
+        standardTotalMilliseconds += standardWatch.Elapsed.TotalMilliseconds;
+        UpdateTotalTimeLabels();
+
         AppendLog($"Print → связанная: {linked}; Queue<T>: {standard}");
         StatusText.Text = "Содержимое обеих очередей выведено в журнал.";
     }
@@ -144,6 +184,9 @@ public partial class QueueDemoView : UserControl
         standardCards.Clear();
         LinkedCanvas.Children.Clear();
         StandardCanvas.Children.Clear();
+        linkedTotalMilliseconds = 0;
+        standardTotalMilliseconds = 0;
+        UpdateTotalTimeLabels();
         log.Clear();
         LogBox.ItemsSource = null;
         LayoutLane(LinkedCanvas, linkedCards);
@@ -245,6 +288,9 @@ public partial class QueueDemoView : UserControl
 
         LinkedTimeLabel.Text = $"Enqueue: {linkedWatch.Elapsed.TotalMilliseconds:0.######} мс";
         StandardTimeLabel.Text = $"Enqueue: {standardWatch.Elapsed.TotalMilliseconds:0.######} мс";
+        linkedTotalMilliseconds += linkedWatch.Elapsed.TotalMilliseconds;
+        standardTotalMilliseconds += standardWatch.Elapsed.TotalMilliseconds;
+        UpdateTotalTimeLabels();
         AppendLog($"Enqueue({value})");
         UpdateState();
     }
@@ -271,6 +317,9 @@ public partial class QueueDemoView : UserControl
         RemoveFirstCard(StandardCanvas, standardCards);
         LinkedTimeLabel.Text = $"Dequeue: {linkedWatch.Elapsed.TotalMilliseconds:0.######} мс";
         StandardTimeLabel.Text = $"Dequeue: {standardWatch.Elapsed.TotalMilliseconds:0.######} мс";
+        linkedTotalMilliseconds += linkedWatch.Elapsed.TotalMilliseconds;
+        standardTotalMilliseconds += standardWatch.Elapsed.TotalMilliseconds;
+        UpdateTotalTimeLabels();
         AppendLog($"Dequeue → связанная: {linkedValue}; Queue<T>: {standardValue}");
         UpdateState();
     }
@@ -357,6 +406,14 @@ public partial class QueueDemoView : UserControl
             ? "Голова: —"
             : $"Голова: {linkedQueue.First!.Value} · Хвост: {linkedQueue.Last!.Value}";
         StatusText.Text = "Операция выполнена.";
+    }
+
+    private void UpdateTotalTimeLabels()
+    {
+        LinkedTotalTimeLabel.Text =
+            $"Всего: {linkedTotalMilliseconds.ToString("0.######", CultureInfo.InvariantCulture)} мс";
+        StandardTotalTimeLabel.Text =
+            $"Всего: {standardTotalMilliseconds.ToString("0.######", CultureInfo.InvariantCulture)} мс";
     }
 
     private void StartSequence()
