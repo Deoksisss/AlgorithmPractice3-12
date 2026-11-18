@@ -37,17 +37,8 @@
     </Style>
   </Window.Styles>
 
-  <Grid RowDefinitions="Auto,*" Margin="24,18,24,20">
-    <StackPanel Grid.Row="0" Margin="2,0,0,14">
-      <TextBlock Text="Data Structures Visualizer"
-                 FontSize="26"
-                 FontWeight="Bold"
-                 Foreground="{StaticResource Accent}" />
-      <TextBlock Text="Динамические структуры данных и алгоритмы"
-                 Foreground="{StaticResource Muted}" />
-    </StackPanel>
-
-    <Grid Grid.Row="1" ColumnDefinitions="230,*">
+  <Grid Margin="24,18,24,20">
+    <Grid ColumnDefinitions="230,*">
       <Border Grid.Column="0"
               Background="{StaticResource PanelBackground}"
               CornerRadius="18"
